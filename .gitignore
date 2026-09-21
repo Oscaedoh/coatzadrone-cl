@@ -1,0 +1,19 @@
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Temporales del proyecto
+_tmp/
+*.log
+
+# Nunca subir credenciales ni llaves de pasarelas de pago
+.env
+.env.*
+secrets.json
+credenciales*.txt

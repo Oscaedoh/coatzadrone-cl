@@ -1,0 +1,38 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>perfil-b</title>
+<style>
+html,body{margin:0;padding:0;width:1000px;height:1000px;overflow:hidden;background:#fff}
+.c{position:relative;width:1000px;height:1000px;overflow:hidden;background:#FFFFFF;
+   font-family:'Century Gothic','Segoe UI',sans-serif;}
+.grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(16,40,70,.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(16,40,70,.07) 1px,transparent 1px);
+  background-size:50px 50px;
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 28%, transparent 70%);}
+.ring{position:absolute;border-radius:50%;}
+.r1{inset:26px;border:3px solid #102846}
+.r2{inset:48px;border:1px solid rgba(16,40,70,.18)}
+.stack{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+.wm{width:748px;display:block}
+.sep{display:flex;align-items:center;gap:24px;margin-top:54px}
+.sep i{display:block;width:126px;height:2px;background:linear-gradient(90deg,transparent,#102846)}
+.sep i.r{background:linear-gradient(90deg,#102846,transparent)}
+.chile{font-size:54px;letter-spacing:.30em;color:#102846;font-weight:700;text-indent:.30em;line-height:1;margin-top:28px}
+.star{width:46px;height:46px;fill:#D32A1E}
+</style></head><body><div class="c">
+<div class="grid"></div>
+<div class="ring r1"></div><div class="ring r2"></div>
+<svg width="1000" height="1000" style="position:absolute;inset:0">
+  <path d="M265 907 A470 470 0 0 0 418.4 962.9" fill="none" stroke="#0B4DA2" stroke-width="10"/>
+  <path d="M418.4 962.9 A470 470 0 0 0 581.6 962.9" fill="none" stroke="#9FB3C8" stroke-width="10"/>
+  <path d="M581.6 962.9 A470 470 0 0 0 735 907" fill="none" stroke="#D32A1E" stroke-width="10"/>
+</svg>
+<div class="stack">
+  <img class="wm" src="logo-wordmark-negro.svg">
+  <div class="sep"><i></i>
+    <svg class="star" viewBox="0 0 24 24"><path d="M12 1.6l2.94 6.42 7.06.79-5.26 4.74 1.45 6.93L12 16.9l-6.19 3.58 1.45-6.93L2 8.81l7.06-.79z"/></svg>
+    <i class="r"></i>
+  </div>
+  <div class="chile">CHILE</div>
+</div>
+</div></body></html>

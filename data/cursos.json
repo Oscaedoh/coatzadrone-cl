@@ -1,0 +1,272 @@
+{
+  "_comentario": "Fuente unica de verdad de los cursos. Para agregar un curso, copia un bloque de 'cursos' y edita los campos. Ver docs/GUIA-AGREGAR-CURSOS.md",
+  "config": {
+    "moneda_principal": "CLP",
+    "whatsapp": "56900000000",
+    "whatsapp_texto": "Hola, quiero información sobre los cursos Pix4D de CoatzaDrone Chile",
+    "email": "contacto@coatzadrone.cl",
+    "formulario_endpoint": "https://formspree.io/f/TU_ID_AQUI",
+    "pix4d_directorio_url": "https://training.pix4d.com/pages/locate-a-pix4d-trusted-training-center",
+    "ga4_id": "",
+    "meta_pixel_id": ""
+  },
+  "cursos": [
+    {
+      "id": "pix4dfields-agricultura-precision",
+      "activo": true,
+      "destacado": true,
+      "estado": "inscripciones-abiertas",
+      "titulo": "Pix4Dfields aplicado a Agricultura de Precisión",
+      "subtitulo": "Del procesamiento de información geoespacial a la toma de decisiones agronómicas en campo",
+      "software": "PIX4Dfields",
+      "nivel": "Intermedio",
+      "modalidad": "Online en vivo",
+      "duracion": "12 horas · 3 sesiones de 4 horas",
+      "idioma": "Español",
+      "imagen": "assets/img/Coatzadrone-precision-agriculture.jpg",
+      "resumen": "Aprende a interpretar y usar información geoespacial generada en Pix4Dfields como apoyo real a la toma de decisiones agronómicas, integrando el análisis de gabinete con la validación en campo.",
+      "objetivo": "Desarrollar en el participante la capacidad de interpretar y utilizar información geoespacial generada en Pix4Dfields como apoyo a la toma de decisiones agronómicas, integrando el análisis de gabinete con la validación y aplicación en campo mediante el uso de Pix4Dfields y herramientas SIG complementarias.",
+      "perfil_egresado": "El enfoque del curso es aplicado y técnico, orientado a que el participante comprenda qué está analizando en Pix4Dfields, cómo se generó la información y cómo puede utilizarla para sustentar decisiones agronómicas en campo.",
+      "dirigido_a": [
+        "Agrónomos y técnicos de campo",
+        "Consultores agrícolas",
+        "Operadores de drones que quieren dar el siguiente paso",
+        "Productores que ya vuelan o subcontratan vuelos de monitoreo"
+      ],
+      "incluye": [
+        "Certificado OFICIAL de participación emitido por Pix4D",
+        "Workbook oficial Pix4Dfields",
+        "Licencia de software Pix4Dfields por 30 días",
+        "Ejercicios prácticos con datasets reales",
+        "Sesiones grabadas disponibles después de cada clase",
+        "Acceso a datasets y materiales por 30 días posteriores al curso",
+        "Docente con experiencia en la industria y certificado por Pix4D",
+        "Enseñanza personalizada en grupos reducidos"
+      ],
+      "beneficios": [
+        "Optimiza tu flujo de trabajo hasta en un 90%",
+        "Reduce drásticamente los costos de tus proyectos",
+        "Base sólida en plataformas RPAS para trabajos fotogramétricos en Agricultura de Precisión",
+        "Mejor calidad en la entrega de proyectos a tus clientes"
+      ],
+      "modulos": [
+        {
+          "numero": 1,
+          "titulo": "Fundamentos y adquisición de datos para Pix4Dfields",
+          "objetivo": "Comprender los principios físicos y técnicos que sustentan la información utilizada en Pix4Dfields, así como los criterios para una correcta adquisición de datos, permitiendo evaluar la calidad y confiabilidad de los insumos antes de su procesamiento.",
+          "contenidos": [
+            "Fundamentos de firmas espectrales aplicadas a cultivos agrícolas",
+            "Interacción radiación – vegetación – sensor",
+            "Comportamiento espectral de plantas en distintas condiciones",
+            "Limitaciones del análisis espectral",
+            "Requisitos de adquisición de datos para Pix4Dfields",
+            "Planificación de vuelos orientados a análisis agrícola",
+            "Influencia de la elevación solar, sombras y condiciones ambientales",
+            "Errores comunes en levantamientos y su impacto en los resultados"
+          ]
+        },
+        {
+          "numero": 2,
+          "titulo": "Índices de vegetación e interpretación en Pix4Dfields",
+          "objetivo": "Desarrollar la capacidad de interpretar índices de vegetación generados en Pix4Dfields con criterio agronómico, comprendiendo qué representan, cuándo utilizarlos y cómo relacionarlos con la variabilidad observada en campo.",
+          "contenidos": [
+            "Principios de los índices de vegetación en Pix4Dfields",
+            "Relación entre bandas espectrales e índices",
+            "Generación y análisis de NDVI, NDRE y GNDVI",
+            "Selección del índice adecuado según cultivo y etapa fenológica",
+            "Lectura técnica de rangos, escalas y simbología",
+            "Identificación de patrones espaciales dentro de un lote",
+            "Uso de estadísticas básicas como apoyo a la interpretación",
+            "Formulación de hipótesis agronómicas a partir de los resultados"
+          ]
+        },
+        {
+          "numero": 3,
+          "titulo": "Procesamiento en Pix4Dfields, DSM y aplicación SIG para campo",
+          "objetivo": "Capacitar al participante para procesar información en Pix4Dfields y transformarla en insumos operativos, integrando análisis multiespectral, topografía superficial (DSM) y SIG, con el fin de preparar información lista para su validación y uso en campo.",
+          "contenidos": [
+            "Flujo de procesamiento en Pix4Dfields",
+            "Generación de ortomosaicos e índices de vegetación",
+            "Generación y uso del Modelo Digital de Superficie (DSM)",
+            "Análisis de pendiente y microrelieve aplicados a agricultura",
+            "Exportación de productos desde Pix4Dfields",
+            "Integración de productos en QGIS",
+            "Georreferenciación de nuevas capas a partir de capas base",
+            "Creación de capas vectoriales analíticas y tablas de atributos",
+            "Preparación de proyectos SIG para trabajo en campo con QField",
+            "Uso del mapa como herramienta de validación en campo"
+          ]
+        },
+        {
+          "numero": 4,
+          "titulo": "Proyecto integrador en Pix4Dfields",
+          "objetivo": "Integrar todos los conocimientos adquiridos para analizar un caso real utilizando Pix4Dfields, generando información geoespacial que sirva como apoyo a la toma de decisiones agronómicas.",
+          "contenidos": [
+            "Procesamiento de un dataset real en Pix4Dfields",
+            "Interpretación de índices de vegetación",
+            "Uso del DSM como apoyo al análisis espacial",
+            "Delimitación de zonas de interés",
+            "Creación de capas y tablas analíticas",
+            "Preparación de un proyecto funcional para trabajo en campo",
+            "Definición de criterios técnicos para la toma de decisiones agronómicas"
+          ]
+        }
+      ],
+      "resultados": [
+        "Evaluar la calidad de datos destinados a Pix4Dfields",
+        "Procesar información multiespectral y DSM en Pix4Dfields",
+        "Interpretar mapas generados en Pix4Dfields con criterio agronómico",
+        "Integrar resultados de Pix4Dfields en entornos SIG",
+        "Preparar información geoespacial para validación en campo",
+        "Utilizar los productos generados como apoyo real a la toma de decisiones agronómicas"
+      ],
+      "requisitos_tecnicos": {
+        "nota": "Puedes trabajar con tu propio equipo siempre que cumpla estas características mínimas:",
+        "items": [
+          "Windows 10 u 11, 64 bits",
+          "CPU Intel i5 / i7 / Xeon o equivalente",
+          "GPU compatible con OpenGL 3.2 (Intel HD 4000 o superior)",
+          "8 a 16 GB de RAM",
+          "20 a 40 GB de espacio libre en disco",
+          "Conexión a internet estable para las sesiones en vivo"
+        ]
+      },
+      "instructor": {
+        "nombre": "Ing. Arturo Salaises Chairez",
+        "cargo": "Instructor certificado Pix4D · PIX4Dfields",
+        "bio": "Ingeniero en Agricultura Sostenible, egresado de la Universidad Autónoma Chapingo, con formación y experiencia en agricultura de precisión, análisis geoespacial y teledetección aplicada a sistemas productivos agrícolas. Su trabajo integra el uso de drones, sensores y software especializado para generar información técnica confiable, enfocada en el diagnóstico del cultivo y la toma de decisiones agronómicas oportunas en campo.",
+        "certificado_url": "https://training.pix4d.com/certificates/afeenai4o",
+        "foto": ""
+      },
+      "cohortes": [
+        {
+          "id": "cohorte-oct-2026",
+          "confirmada": false,
+          "etiqueta": "Octubre 2026",
+          "inicio": "2026-10-20",
+          "fin": "2026-10-22",
+          "horario": "18:00 a 22:00 h (hora de Chile)",
+          "sesiones": ["Martes 20 de octubre", "Miércoles 21 de octubre", "Jueves 22 de octubre"],
+          "cupos_totales": 15,
+          "cupos_disponibles": 15,
+          "estado": "abierto"
+        }
+      ],
+      "precio": {
+        "clp": null,
+        "clp_early": null,
+        "early_hasta": null,
+        "usd": 180,
+        "nota": "Valor de referencia internacional. El valor en pesos chilenos se confirma al momento de la inscripción."
+      },
+      "pagos": {
+        "mercadopago_url": "",
+        "flow_url": "",
+        "paypal_url": "",
+        "transferencia": true
+      }
+    },
+    {
+      "id": "pix4dmapper-fotogrametria",
+      "activo": true,
+      "destacado": false,
+      "estado": "proximamente",
+      "titulo": "Pix4Dmapper · Fotogrametría y Mapeo Profesional",
+      "subtitulo": "Procesamiento fotogramétrico de alta precisión para topografía, construcción e ingeniería",
+      "software": "PIX4Dmapper",
+      "nivel": "Básico a intermedio",
+      "modalidad": "Online en vivo",
+      "duracion": "Por definir",
+      "idioma": "Español",
+      "imagen": "assets/img/Coatzadrone-mining-industry.jpg",
+      "resumen": "Formación oficial en Pix4Dmapper: desde la planificación del vuelo hasta la entrega de ortomosaicos, nubes de puntos y modelos 3D con precisión topográfica. Prepara para el examen de certificación Pix4D Expert User.",
+      "objetivo": "",
+      "perfil_egresado": "",
+      "dirigido_a": [
+        "Topógrafos y geomensores",
+        "Ingenieros civiles y de construcción",
+        "Operadores de drones del sector minero y energía",
+        "Profesionales SIG"
+      ],
+      "incluye": [
+        "Certificado oficial de participación Pix4D",
+        "Material oficial del curso",
+        "Ejercicios prácticos con datasets reales",
+        "Preparación para el examen Pix4D Expert User"
+      ],
+      "beneficios": [],
+      "modulos": [],
+      "resultados": [],
+      "requisitos_tecnicos": { "nota": "", "items": [] },
+      "instructor": { "nombre": "", "cargo": "", "bio": "", "certificado_url": "", "foto": "" },
+      "cohortes": [],
+      "precio": { "clp": null, "clp_early": null, "early_hasta": null, "usd": null, "nota": "" },
+      "pagos": { "mercadopago_url": "", "flow_url": "", "paypal_url": "", "transferencia": true }
+    },
+    {
+      "id": "pix4dmatic-pix4dsurvey",
+      "activo": true,
+      "destacado": false,
+      "estado": "proximamente",
+      "titulo": "PIX4Dmatic + PIX4Dsurvey · Corredores y Gran Escala",
+      "subtitulo": "Procesamiento de grandes volúmenes y extracción de entregables CAD para topografía",
+      "software": "PIX4Dmatic",
+      "nivel": "Avanzado",
+      "modalidad": "Online en vivo",
+      "duracion": "Por definir",
+      "idioma": "Español",
+      "imagen": "assets/img/Coatzadrone-energy.jpg",
+      "resumen": "Flujo de trabajo profesional para proyectos de gran escala: procesamiento en PIX4Dmatic y vectorización de entregables topográficos en PIX4Dsurvey para exportar a CAD.",
+      "objetivo": "",
+      "perfil_egresado": "",
+      "dirigido_a": [
+        "Empresas de topografía y geomensura",
+        "Equipos de inspección de líneas de transmisión",
+        "Minería y obras lineales"
+      ],
+      "incluye": [
+        "Certificado oficial de participación Pix4D",
+        "Material oficial del curso",
+        "Datasets de gran escala"
+      ],
+      "beneficios": [],
+      "modulos": [],
+      "resultados": [],
+      "requisitos_tecnicos": { "nota": "", "items": [] },
+      "instructor": { "nombre": "", "cargo": "", "bio": "", "certificado_url": "", "foto": "" },
+      "cohortes": [],
+      "precio": { "clp": null, "clp_early": null, "early_hasta": null, "usd": null, "nota": "" },
+      "pagos": { "mercadopago_url": "", "flow_url": "", "paypal_url": "", "transferencia": true }
+    }
+  ],
+  "faq": [
+    {
+      "p": "¿El certificado es oficial de Pix4D?",
+      "r": "Sí. CoatzaDrone es Centro de Entrenamiento Oficial Pix4D y aparece listado para Chile en el directorio oficial de Pix4D. Al completar el curso recibes un certificado emitido por Pix4D, no por un tercero."
+    },
+    {
+      "p": "¿Necesito tener licencia del software?",
+      "r": "No. El curso incluye una licencia de Pix4Dfields por 30 días para que puedas practicar durante y después de las sesiones."
+    },
+    {
+      "p": "¿Las clases quedan grabadas?",
+      "r": "Sí. Todas las sesiones se graban y quedan disponibles para los participantes, junto con los datasets y materiales, por 30 días posteriores al curso."
+    },
+    {
+      "p": "¿Necesito saber volar drones para tomar el curso?",
+      "r": "No es indispensable. El curso se enfoca en el procesamiento e interpretación de la información. Si ya vuelas, el Módulo 1 te dará criterios para mejorar la calidad de tus levantamientos; si subcontratas vuelos, aprenderás a evaluar si los datos que recibes sirven."
+    },
+    {
+      "p": "¿Puedo pagar desde fuera de Chile?",
+      "r": "Sí. Además de los medios de pago locales, contamos con opciones internacionales para alumnos de México, Perú y el resto de Latinoamérica."
+    },
+    {
+      "p": "¿Entregan factura?",
+      "r": "Sí, emitimos documento tributario. Indícalo en el formulario de inscripción con los datos de tu empresa."
+    },
+    {
+      "p": "¿Cuántos cupos hay por curso?",
+      "r": "Trabajamos con grupos reducidos para garantizar enseñanza personalizada y acompañamiento durante los ejercicios prácticos."
+    }
+  ]
+}

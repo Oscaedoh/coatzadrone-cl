@@ -1,0 +1,84 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>portada-a</title>
+<style>
+html,body{margin:0;padding:0;width:1640px;height:624px;overflow:hidden}
+.c{position:relative;width:1640px;height:624px;overflow:hidden;
+   background:radial-gradient(90% 150% at 50% 8%, #1B3A5C 0%, #102844 38%, #081525 70%, #040B14 100%);
+   font-family:'Century Gothic','Segoe UI',sans-serif;color:#fff}
+.grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.35) 62%,transparent 88%)}
+svg.scene{position:absolute;inset:0}
+.lock{position:absolute;left:0;right:0;top:92px;display:flex;flex-direction:column;align-items:center}
+.wm{width:604px;display:block}
+.sep{display:flex;align-items:center;gap:22px;margin-top:34px}
+.sep i{display:block;width:120px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6))}
+.sep i.r{background:linear-gradient(90deg,rgba(255,255,255,.6),transparent)}
+.star{width:26px;height:26px;fill:#fff}
+.tag{margin-top:26px;font-size:26px;letter-spacing:.34em;text-indent:.34em;font-weight:700}
+.srv{margin-top:20px;font-size:17px;letter-spacing:.18em;text-indent:.18em;color:rgba(255,255,255,.62)}
+.flag{position:absolute;left:50%;transform:translateX(-50%);bottom:0;display:flex;width:640px;height:7px}
+.flag b{flex:1;display:block}
+.flag .f1{background:linear-gradient(90deg,rgba(11,77,162,0),#0B4DA2)}
+.flag .f2{background:#fff}
+.flag .f3{background:linear-gradient(90deg,#D32A1E,rgba(211,42,30,0))}
+</style></head><body><div class="c">
+<div class="grid"></div>
+<svg class="scene" viewBox="0 0 1640 624">
+  <defs>
+    <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FD4FF" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#7FD4FF" stop-opacity="0"/>
+    </linearGradient>
+    
+      
+    </linearGradient>
+  </defs>
+  <!-- trayectoria de vuelo -->
+  <path d="M96 196 C 210 128, 320 232, 438 166" fill="none" stroke="rgba(255,255,255,.18)"
+        stroke-width="2" stroke-dasharray="10 12"/>
+  <circle cx="96" cy="196" r="5" fill="rgba(255,255,255,.5)"/>
+  <circle cx="438" cy="166" r="5" fill="rgba(255,255,255,.5)"/>
+  <!-- cono de escaneo -->
+  <path d="M1424 166 L1304 474 L1544 474 Z" fill="url(#cone)"/>
+  <path d="M1424 172 L1308 472" stroke="rgba(127,212,255,.35)" stroke-width="1.5" stroke-dasharray="6 8"/>
+  <path d="M1424 172 L1540 472" stroke="rgba(127,212,255,.35)" stroke-width="1.5" stroke-dasharray="6 8"/>
+  <!-- cordillera fondo -->
+  <path d="M0 560 L90 468 L160 505 L250 402 L332 470 L412 428 L500 500 L582 442 L662 490 L762 392
+           L852 464 L942 422 L1032 494 L1122 438 L1212 486 L1302 406 L1392 470 L1482 432 L1572 490 L1640 452
+           L1640 624 L0 624 Z" fill="#10263F" opacity=".95"/>
+  <!-- cordillera frente -->
+  <path d="M0 588 L120 542 L232 578 L342 520 L452 572 L562 534 L682 582 L802 524 L922 566 L1042 530
+           L1162 578 L1282 534 L1402 572 L1522 540 L1640 576 L1640 624 L0 624 Z" fill="#081726"/>
+  <!-- malla topografica sobre terreno -->
+  <g stroke="rgba(127,212,255,.22)" stroke-width="1.2" fill="none">
+    <path d="M1302 504 L1424 482 L1548 504"/>
+    <path d="M1284 532 L1424 506 L1566 532"/>
+    <path d="M1266 560 L1424 530 L1584 560"/>
+    <path d="M1364 490 L1338 560"/><path d="M1424 482 L1424 556"/><path d="M1484 490 L1510 560"/>
+  </g>
+  <!-- dron -->
+  <g transform="translate(1424 142) scale(1.16) translate(-50 -50)" fill="none" stroke="#fff"
+     stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="34" y1="34" x2="23" y2="23"/><line x1="66" y1="34" x2="77" y2="23"/>
+    <line x1="34" y1="66" x2="23" y2="77"/><line x1="66" y1="66" x2="77" y2="77"/>
+    <rect x="33" y="33" width="34" height="34" rx="9"/>
+    <circle cx="23" cy="23" r="15"/><circle cx="77" cy="23" r="15"/>
+    <circle cx="23" cy="77" r="15"/><circle cx="77" cy="77" r="15"/>
+    <circle cx="23" cy="23" r="3.4" fill="#fff" stroke="none"/><circle cx="77" cy="23" r="3.4" fill="#fff" stroke="none"/>
+    <circle cx="23" cy="77" r="3.4" fill="#fff" stroke="none"/><circle cx="77" cy="77" r="3.4" fill="#fff" stroke="none"/>
+    <circle cx="50" cy="50" r="7" fill="#7FD4FF" stroke="none"/>
+  </g>
+</svg>
+<div class="lock">
+  <img class="wm" src="logo-wordmark-blanco.svg">
+  <div class="sep"><i></i>
+    <svg class="star" viewBox="0 0 24 24"><path d="M12 1.6l2.94 6.42 7.06.79-5.26 4.74 1.45 6.93L12 16.9l-6.19 3.58 1.45-6.93L2 8.81l7.06-.79z"/></svg>
+    <i class="r"></i>
+  </div>
+  <div class="tag">TECNOLOG&Iacute;A A&Eacute;REA EN CHILE</div>
+  <div class="srv">TOPOGRAF&Iacute;A &middot; FOTOGRAMETR&Iacute;A &middot; INSPECCI&Oacute;N DE ACTIVOS &middot; AGRICULTURA DE PRECISI&Oacute;N</div>
+</div>
+<div class="flag"><b class="f1"></b><b class="f2"></b><b class="f3"></b></div>
+</div></body></html>
