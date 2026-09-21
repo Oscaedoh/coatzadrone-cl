@@ -267,6 +267,48 @@
     $('#precioNota').textContent = p.nota;
     $('#precioIncluye').innerHTML = (c.incluye || []).slice(0, 5)
       .map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+
+    renderBotonesPago(c);
+  }
+
+  // Si hay links de pago cargados en el JSON, se muestran como botones de pago
+  // directo. Si no, se mantiene el flujo de reserva por formulario.
+  function renderBotonesPago(c) {
+    var pagos = c.pagos || {};
+    var cont = $('#botonesPago');
+    if (!cont) return;
+
+    var opciones = [
+      { url: pagos.mercadopago_url, texto: 'Pagar con Mercado Pago', medio: 'mercadopago' },
+      { url: pagos.flow_url,        texto: 'Pagar con Flow / Webpay', medio: 'flow' },
+      { url: pagos.paypal_url,      texto: 'Pagar con PayPal',        medio: 'paypal' }
+    ].filter(function (o) { return o.url; });
+
+    if (!opciones.length) { cont.hidden = true; return; }
+
+    cont.hidden = false;
+    cont.innerHTML = opciones.map(function (o, i) {
+      return '<a class="btn ' + (i === 0 ? 'btn--primario' : 'btn--fantasma') + ' btn--bloque" ' +
+             'href="' + esc(o.url) + '" target="_blank" rel="noopener" ' +
+             'data-pago="' + esc(o.medio) + '" style="margin-bottom:10px">' + esc(o.texto) + '</a>';
+    }).join('') +
+    '<p style="font-size:.8rem;color:var(--gris);text-align:center;margin:6px 0 0">' +
+      'Pago seguro. Recibirás la confirmación y el acceso por correo.</p>';
+
+    $$('[data-pago]', cont).forEach(function (a) {
+      a.addEventListener('click', function () {
+        evento('iniciar_pago', { curso: c.id, medio: a.getAttribute('data-pago') });
+        if (typeof window.fbq === 'function') window.fbq('track', 'InitiateCheckout');
+      });
+    });
+
+    // Con pago directo disponible, el CTA de reserva pasa a segundo plano.
+    var ctaReserva = $('[data-evento="cta_precio"]');
+    if (ctaReserva) {
+      ctaReserva.classList.remove('btn--primario');
+      ctaReserva.classList.add('btn--fantasma');
+      ctaReserva.textContent = 'Prefiero que me contacten';
+    }
   }
 
   function renderModulos(c) {

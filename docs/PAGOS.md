@@ -74,13 +74,21 @@ opción a evaluar más adelante.
 
 ## Cómo se ve en el sitio
 
-Mientras los links estén vacíos (`""`), el sitio muestra los medios de pago
-disponibles como información y deriva la inscripción al formulario. Es el flujo
-correcto para un curso con cupos limitados: primero confirmas el cupo, después
-envías el link de pago al alumno.
+Mientras los links estén vacíos (`""`), el sitio muestra los medios de pago como
+información y deriva la inscripción al formulario. Es el flujo correcto para un
+curso con cupos limitados: primero confirmas el cupo, después envías el link de
+pago al alumno.
 
-Cuando cargues los links, se pueden mostrar como botones de pago directo en la
-página. Avísame cuando los tengas y lo conecto.
+**Apenas pegues un link, el sitio cambia solo.** No hay que tocar código:
+
+- Aparecen los botones **Pagar con Mercado Pago** y **Pagar con Flow / Webpay**
+  dentro del bloque de precio
+- El botón "Reservar mi cupo" pasa a segundo plano como *"Prefiero que me contacten"*,
+  para no competir con el pago directo
+- Se registra el evento `iniciar_pago` en GA4 y `InitiateCheckout` en el Píxel de
+  Meta, que es lo que permite optimizar las campañas hacia compras reales
+
+Para volver al flujo de reserva, basta con dejar los links en `""` otra vez.
 
 ---
 
