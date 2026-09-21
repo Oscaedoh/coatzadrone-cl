@@ -130,12 +130,46 @@ con un clic (*Rollback*).
 
 ---
 
-## Correo del dominio (opcional pero recomendado)
+## Correo del dominio — `contacto@coatzadrone.cl`
 
-Cloudflare incluye **Email Routing** gratis: te permite recibir correo en
-`contacto@coatzadrone.cl` y reenviarlo a tu Gmail, sin costo.
+Esta dirección **ya aparece publicada** en el footer y en el formulario del sitio,
+así que hay que crearla apenas el dominio quede **Active**. Mientras no exista, un
+correo enviado ahí rebota.
 
-Cloudflare → tu dominio → **Email** → **Email Routing** → seguir el asistente.
+Cloudflare incluye **Email Routing** gratis y sin límite de reenvíos.
 
-Para *enviar* desde esa dirección necesitas Google Workspace (de pago) o
-configurar Gmail con "Enviar como" usando un servidor SMTP.
+### Recibir correo (gratis, 5 minutos)
+
+1. Cloudflare → dominio `coatzadrone.cl` → menú **Email** → **Email Routing**
+2. **Get started**. Cloudflare crea solo los registros MX y el SPF necesarios
+   — acéptalos cuando te los proponga
+3. En **Destination addresses**, agrega tu Gmail y **confirma el correo de
+   verificación** que te llega (sin esto no funciona)
+4. En **Routing rules**, crea la regla:
+
+   | Custom address | Action | Destination |
+   |---|---|---|
+   | `contacto@coatzadrone.cl` | Send to an email | tu Gmail |
+
+5. Opcional pero recomendado: activa **Catch-all** para que cualquier dirección
+   del dominio (ventas@, cursos@, lo que sea) llegue igual a tu Gmail y no se
+   pierda nada.
+
+### Probar que quedó bien
+
+Envía un correo desde otra cuenta a `contacto@coatzadrone.cl` y confirma que llega.
+Hazlo antes de lanzar publicidad.
+
+### Enviar desde esa dirección
+
+Email Routing solo **recibe**. Para responder como `contacto@coatzadrone.cl` desde
+Gmail tienes dos caminos:
+
+- **Gratis:** Gmail → Configuración → Cuentas e importación → *Enviar como* →
+  agregar la dirección, usando un SMTP externo (por ejemplo Brevo o Zoho, ambos con
+  plan gratuito). Requiere un poco de configuración.
+- **De pago:** Google Workspace (~US$7 por usuario al mes), que reemplaza Email
+  Routing y entrega buzón completo con envío incluido.
+
+Para partir, recibir es suficiente: los leads llegan por el formulario y por
+WhatsApp, y puedes responder desde tu Gmail habitual.
