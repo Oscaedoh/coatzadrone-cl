@@ -56,9 +56,11 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 
 **Publicado y en vivo.**
 
+- **Sitio en producción: <https://coatzadrone.cl>**
 - Repositorio: <https://github.com/Oscaedoh/coatzadrone-cl> (público, rama `main`)
-- Deploy: <https://coatzadrone-cl.oscaedoh.workers.dev> — republica solo en cada push
-- Dominio: `coatzadrone.cl` comprado **directo en NIC.cl**, todavía sin conectar
+- Deploy alterno: <https://coatzadrone-cl.oscaedoh.workers.dev> — republica en cada push
+- Dominio registrado **directo en NIC.cl**, delegado a Cloudflare
+  (`bart.ns.cloudflare.com` / `hope.ns.cloudflare.com`)
 
 Resuelto:
 
@@ -68,8 +70,10 @@ Resuelto:
 
 Pendiente — ver `docs/CONFIGURAR.md`:
 
-1. Conectar el dominio: nameservers de Cloudflare en clientes.nic.cl
-2. Correo de contacto operativo (hoy `contacto@coatzadrone.cl` aún no existe)
+1. En el panel de Cloudflare: activar **Always Use HTTPS** y crear la regla de
+   redirección `www` → raíz (hoy ambos sirven contenido, duplicado para SEO)
+2. Correo: el dueño eligió **Email Routing + responder desde Gmail**.
+   `contacto@coatzadrone.cl` aún no existe y hoy rebota
 3. Endpoint del formulario (hoy deriva a WhatsApp, sin registro ordenado)
 4. IDs de GA4 y Píxel de Meta, antes de pautar
 5. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
