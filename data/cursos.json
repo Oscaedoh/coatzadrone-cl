@@ -2,7 +2,7 @@
   "_comentario": "Fuente unica de verdad de los cursos. Para agregar un curso, copia un bloque de 'cursos' y edita los campos. Ver docs/GUIA-AGREGAR-CURSOS.md",
   "config": {
     "moneda_principal": "CLP",
-    "whatsapp": "56900000000",
+    "whatsapp": "56957042650",
     "whatsapp_texto": "Hola, quiero información sobre los cursos Pix4D de CoatzaDrone Chile",
     "email": "contacto@coatzadrone.cl",
     "formulario_endpoint": "https://formspree.io/f/TU_ID_AQUI",
@@ -138,26 +138,13 @@
         "certificado_url": "https://training.pix4d.com/certificates/afeenai4o",
         "foto": ""
       },
-      "cohortes": [
-        {
-          "id": "cohorte-oct-2026",
-          "confirmada": false,
-          "etiqueta": "Octubre 2026",
-          "inicio": "2026-10-20",
-          "fin": "2026-10-22",
-          "horario": "18:00 a 22:00 h (hora de Chile)",
-          "sesiones": ["Martes 20 de octubre", "Miércoles 21 de octubre", "Jueves 22 de octubre"],
-          "cupos_totales": 15,
-          "cupos_disponibles": 15,
-          "estado": "abierto"
-        }
-      ],
+      "cohortes": [],
       "precio": {
-        "clp": null,
+        "clp": 275000,
         "clp_early": null,
         "early_hasta": null,
-        "usd": 180,
-        "nota": "Valor de referencia internacional. El valor en pesos chilenos se confirma al momento de la inscripción."
+        "usd": null,
+        "nota": "Valor por participante. Consulta por descuentos para equipos y empresas."
       },
       "pagos": {
         "mercadopago_url": "",

@@ -383,7 +383,8 @@
     if (!chs.length) {
       cont.innerHTML = '<div class="cohorte"><div class="cohorte__fecha">Por anunciar</div>' +
         '<div class="cohorte__detalle">Estamos cerrando el calendario de la próxima versión. ' +
-        'Déjanos tus datos y serás el primero en enterarte de la fecha y del valor de preventa.</div>' +
+        'Déjanos tus datos y serás el primero en conocer la fecha de inicio, con prioridad ' +
+        'para reservar cupo antes de que se abra la inscripción pública.</div>' +
         '<div class="cohorte__acciones"><a class="btn btn--primario" href="#inscripcion">Avísenme</a></div></div>';
       return;
     }
