@@ -52,18 +52,27 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 - Por eso el sitio no usa build y el servidor local es un script de PowerShell
   (`scripts/servidor-local.ps1`, puerto 8899)
 
-## Estado actual
+## Estado actual — 21 de septiembre de 2026
 
-La landing está construida y funcionando en local. Pendientes antes de salir al aire,
-todos en `data/cursos.json` — ver `docs/CONFIGURAR.md`:
+**Publicado y en vivo.**
 
-1. Número de WhatsApp real (hoy `56900000000`, de ejemplo)
-2. Correo de contacto del dominio
-3. Precio en CLP (hoy `null` → el sitio muestra "Consultar")
-4. Confirmar las fechas de la cohorte de octubre (hoy marcada como referencial)
-5. Endpoint del formulario (hoy deriva a WhatsApp)
-6. IDs de GA4 y Píxel de Meta
-7. Links de pago de Mercado Pago y Flow
+- Repositorio: <https://github.com/Oscaedoh/coatzadrone-cl> (público, rama `main`)
+- Deploy: <https://coatzadrone-cl.oscaedoh.workers.dev> — republica solo en cada push
+- Dominio: `coatzadrone.cl` comprado **directo en NIC.cl**, todavía sin conectar
+
+Resuelto:
+
+- WhatsApp real: +56 9 5704 2650
+- Precio del workshop Pix4Dfields: **$275.000 CLP fijo, sin preventa** (decisión del dueño)
+- Calendario en "Por anunciar", captando leads con prioridad de cupo
+
+Pendiente — ver `docs/CONFIGURAR.md`:
+
+1. Conectar el dominio: nameservers de Cloudflare en clientes.nic.cl
+2. Correo de contacto operativo (hoy `contacto@coatzadrone.cl` aún no existe)
+3. Endpoint del formulario (hoy deriva a WhatsApp, sin registro ordenado)
+4. IDs de GA4 y Píxel de Meta, antes de pautar
+5. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
 
 ## Siguientes etapas previstas
 

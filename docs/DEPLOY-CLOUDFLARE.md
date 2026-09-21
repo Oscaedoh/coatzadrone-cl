@@ -1,62 +1,37 @@
 # Publicar el sitio: GitHub → Cloudflare Pages → coatzadrone.cl
 
-Costo total: **$0**. Cloudflare Pages no cobra por ancho de banda ni por visitas.
+Costo total: **$0**. Cloudflare no cobra por ancho de banda ni por visitas.
 
 ---
 
-## Paso 1 — Subir el proyecto a GitHub
+## Pasos 1 y 2 — ✅ completados el 21 de septiembre de 2026
 
-Desde la carpeta del proyecto, en la terminal:
+- Repositorio: <https://github.com/Oscaedoh/coatzadrone-cl> (rama `main`)
+- Deploy en vivo: <https://coatzadrone-cl.oscaedoh.workers.dev>
+- Cada `git push` a `main` republica el sitio automáticamente
 
-```bash
-git init -b main
-```
-
-```bash
-git add .
-```
+Para publicar cambios de aquí en adelante basta con:
 
 ```bash
-git commit -m "Landing de cursos Pix4D — CoatzaDrone Chile"
+git add . && git commit -m "Describe el cambio" && git push
 ```
 
-Crea el repositorio vacío en <https://github.com/new>:
+Las credenciales de GitHub quedaron guardadas en Git Credential Manager, así que
+el push ya no pide autenticación en este equipo.
 
-- **Repository name:** `coatzadrone-cl`
-- **Visibility:** Private (puedes cambiarlo después)
-- **No** marques "Add a README file"
+<details>
+<summary>Configuración usada, por si hay que rehacer el proyecto en Cloudflare</summary>
 
-Luego conecta y sube (reemplaza `TU-USUARIO`):
+**Workers & Pages** → **Create** → **Pages** → **Connect to Git** → repositorio
+`coatzadrone-cl`, con el build vacío:
 
-```bash
-git remote add origin https://github.com/TU-USUARIO/coatzadrone-cl.git
-```
+| Campo | Valor |
+|---|---|
+| Framework preset | `None` |
+| Build command | *(vacío)* |
+| Build output directory | `/` |
 
-```bash
-git push -u origin main
-```
-
-GitHub pedirá autenticación la primera vez. Si te pide contraseña, usa un
-**Personal Access Token**: github.com → Settings → Developer settings →
-Personal access tokens → Tokens (classic) → Generate new token, con permiso `repo`.
-
----
-
-## Paso 2 — Conectar Cloudflare Pages
-
-1. Crea una cuenta gratuita en <https://dash.cloudflare.com/sign-up>
-2. En el panel: **Workers & Pages** → **Create** → pestaña **Pages** →
-   **Connect to Git**
-3. Autoriza GitHub y selecciona el repositorio `coatzadrone-cl`
-4. Configuración del build — **déjalo todo vacío**:
-
-   | Campo | Valor |
-   |---|---|
-   | Framework preset | `None` |
-   | Build command | *(vacío)* |
-   | Build output directory | `/` |
-
-5. **Save and Deploy**
+</details>
 
 En menos de un minuto el sitio queda en vivo en una URL tipo
 `coatzadrone-cl.pages.dev`. Úsala para revisar antes de conectar el dominio.
@@ -83,19 +58,35 @@ Desde ahí, **cada `git push` a `main` republica el sitio automáticamente.**
 
 ### 3b. Cambiar los nameservers en NIC Chile
 
-Los dominios `.cl` se administran en NIC Chile, aunque los hayas comprado por
-un revendedor.
+`coatzadrone.cl` está registrado **directo en NIC.cl**, así que el cambio se hace
+ahí mismo (no hay revendedor de por medio).
 
-1. Entra a <https://clientes.nic.cl> con tu cuenta
-2. Busca `coatzadrone.cl` → **Modificar servidores de nombre** (DNS)
-3. Reemplaza los servidores actuales por los dos de Cloudflare
-4. Guarda
+1. Entra a <https://clientes.nic.cl> — el acceso es con **ClaveÚnica** o con tu
+   usuario y contraseña de NIC
+2. Ve a tus dominios y selecciona `coatzadrone.cl`
+3. Busca la opción de **servidores de nombre / DNS** (según la versión del panel
+   aparece como *"Cambiar servidores de nombre"* o *"Modificar DNS"*)
+4. **Borra los servidores actuales** y deja únicamente los dos de Cloudflare, por
+   ejemplo:
 
-> **Ojo:** si compraste el dominio a través de un revendedor (GoDaddy, HostingPlus,
-> Bluehosting, etc.), el cambio se hace en el panel de ese proveedor, no en NIC.cl.
+   ```
+   dana.ns.cloudflare.com
+   rick.ns.cloudflare.com
+   ```
 
-La propagación tarda entre 15 minutos y 24 horas. Cloudflare te envía un correo
-cuando el dominio queda activo.
+   NIC exige un mínimo de dos servidores y valida que respondan. Los de Cloudflare
+   cumplen, así que no debería rechazarlos.
+
+5. Guarda los cambios
+
+La propagación suele tomar entre 30 minutos y algunas horas. Cloudflare envía un
+correo cuando detecta el cambio y marca el dominio como **Active**.
+
+> **Importante:** al mover los nameservers a Cloudflare, **todos** los registros DNS
+> del dominio pasan a administrarse desde Cloudflare. Si `coatzadrone.cl` ya tenía
+> correo o algún servicio apuntando ahí, verifica que Cloudflare haya copiado esos
+> registros en el escaneo del paso 3a antes de guardar. Si el dominio estaba sin
+> usar, no hay nada que preservar.
 
 ### 3c. Apuntar el dominio al sitio
 

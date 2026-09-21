@@ -3,18 +3,25 @@
 Todo se edita en **un solo archivo**: `data/cursos.json`.
 Ábrelo con el Bloc de notas, VS Code o directamente en GitHub desde el navegador.
 
-> El sitio funciona hoy sin estos datos: muestra "Consultar" en el precio y deriva las
-> inscripciones a WhatsApp. Pero para hacer publicidad conviene completarlos todos.
+## Estado al 21 de septiembre de 2026
+
+| # | Dato | Estado |
+|---|---|---|
+| 1 | Teléfono de WhatsApp | ✅ +56 9 5704 2650 |
+| 2 | Correo de contacto | ⚠️ `contacto@coatzadrone.cl` aún no existe |
+| 3 | Precio en CLP | ✅ $275.000 fijo, sin preventa |
+| 4 | Fechas del curso | ✅ deliberadamente en "Por anunciar" |
+| 5 | Formulario a correo | ❌ pendiente |
+| 6 | GA4 y Píxel de Meta | ❌ pendiente, necesario antes de pautar |
+| 7 | Links de pago | ❌ Flow en creación |
 
 ---
 
-## 1. Teléfono de WhatsApp — **obligatorio**
-
-Hoy está el número de ejemplo `56900000000`. Todos los botones de WhatsApp apuntan ahí.
+## 1. Teléfono de WhatsApp — ✅ listo
 
 ```json
 "config": {
-  "whatsapp": "56912345678",
+  "whatsapp": "56957042650",
 ```
 
 Formato: código de país + número, **sin** el signo `+`, sin espacios ni guiones.
@@ -22,45 +29,58 @@ Chile es `56` y el móvil parte con `9`. Ejemplo: +56 9 1234 5678 → `569123456
 
 ---
 
-## 2. Correo de contacto — **obligatorio**
+## 2. Correo de contacto — ⚠️ atención
 
 ```json
   "email": "contacto@coatzadrone.cl",
 ```
 
-Si aún no tienes correo del dominio `.cl`, usa uno que revises a diario. Se puede
-cambiar después en 10 segundos.
+Esa dirección aparece en el footer y en el formulario, **pero la casilla todavía no
+existe**: el dominio aún no está conectado. Hoy, un correo enviado ahí rebota.
+
+Dos salidas:
+
+- **Provisoria:** poner un correo que sí revises (Gmail, por ejemplo) hasta que el
+  dominio esté operativo.
+- **Definitiva:** al conectar `coatzadrone.cl` a Cloudflare, activar **Email Routing**
+  (gratis) para que `contacto@coatzadrone.cl` reenvíe a tu Gmail. Ver
+  [DEPLOY-CLOUDFLARE.md](DEPLOY-CLOUDFLARE.md#correo-del-dominio-opcional-pero-recomendado).
 
 ---
 
-## 3. Precio en pesos chilenos — **obligatorio para publicidad**
+## 3. Precio en pesos chilenos — ✅ listo
 
-Mientras `clp` esté en `null`, el sitio muestra **"Consultar"**. Es honesto y sirve
-para captar leads, pero convierte mejor con precio visible.
+Definido: **$275.000 CLP fijo, sin preventa.**
 
 ```json
 "precio": {
-  "clp": 249000,
-  "clp_early": 199000,
-  "early_hasta": "2026-10-10",
-  "usd": 180
+  "clp": 275000,
+  "clp_early": null,
+  "early_hasta": null,
+  "usd": null
 }
 ```
 
-- `clp` — valor general.
-- `clp_early` — valor preventa. Si lo llenas, el sitio muestra el precio preventa
-  destacado y el general tachado como referencia. Déjalo en `null` si no hay preventa.
-- `early_hasta` — hasta cuándo rige la preventa, formato `AAAA-MM-DD`.
-- `usd` — referencia para alumnos fuera de Chile.
+Si más adelante quieres hacer una preventa real:
 
-**Referencia:** en México el curso se cobra $3.000 MXN / USD $180.
+- `clp` — valor general.
+- `clp_early` — valor preventa. Al llenarlo, el sitio muestra el precio preventa
+  destacado y el general como referencia.
+- `early_hasta` — hasta cuándo rige, formato `AAAA-MM-DD`.
+
+> **Ojo con los descuentos.** Mostrar un "precio normal" que nunca se cobró es
+> publicidad engañosa bajo la Ley 19.496 y SERNAC ha multado por eso. El precio de
+> referencia debe haber sido el cobrado efectivamente antes. Una preventa que
+> realmente sube de precio al vencer sí es válida.
 
 ---
 
-## 4. Fechas confirmadas del curso
+## 4. Fechas del curso — ✅ por ahora, "Por anunciar"
 
-Hoy hay una cohorte de ejemplo marcada como **fecha referencial** (se muestra ese
-aviso en el sitio). Al confirmar, cambia `confirmada` a `true` y ajusta las fechas:
+Decisión actual: sin fecha fija. `"cohortes": []` hace que la sección de calendario
+muestre "Por anunciar" y capte leads con prioridad de cupo.
+
+Cuando tengas la fecha, agrega la cohorte dentro del arreglo:
 
 ```json
 "cohortes": [
