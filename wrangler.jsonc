@@ -1,9 +1,10 @@
 {
   // Configuracion del Worker que publica coatzadrone.cl.
   //
-  // El sitio son archivos estaticos servidos desde la raiz del repositorio.
-  // Cloudflare los entrega ANTES de ejecutar el script, asi que worker/index.js
-  // solo corre para rutas que no son un archivo — hoy, /api/lead.
+  // run_worker_first hace que worker/index.js se ejecute ANTES de entregar los
+  // archivos estaticos. Es necesario para poder interceptar todo el sitio
+  // cuando esta en mantenimiento; el Worker decide y despues pide el archivo
+  // con env.ASSETS.fetch(). Sin esto, "/" se serviria sin pasar por el codigo.
   //
   // El secreto BREVO_API_KEY no va aqui. Se define en el panel:
   // Workers & Pages -> coatzadrone-cl -> Settings -> Variables and Secrets.
@@ -12,6 +13,7 @@
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": true
   }
 }
