@@ -123,9 +123,7 @@ Pendiente — ver `docs/CONFIGURAR.md`:
 3. ~~Lista de novedades del banner~~ — ✅ hecha, es la id 7
 4. **Crear el secreto `ADMIN_CLAVE`** en Cloudflare (tipo *Secret*). Sin él el
    panel `/admin` queda cerrado
-5. **Crear el almacén KV** (*Storage & Databases* → *KV* → `coatzadrone-comercio`)
-   y pasar el id para conectarlo en `wrangler.jsonc`. Sin él el panel abre y
-   deja editar, pero no puede guardar
+5. ~~Crear el almacén KV y conectarlo~~ — ✅ hecho, binding `CONFIG`
 6. Armar la automatización de los correos 2 al 5 en Brevo
 7. Links de pago: **Botón de Pago** en Flow y **Link de pago** en Mercado Pago.
    Ya no van al JSON — se pegan en `/admin`
