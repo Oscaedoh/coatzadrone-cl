@@ -52,9 +52,28 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 - Por eso el sitio no usa build y el servidor local es un script de PowerShell
   (`scripts/servidor-local.ps1`, puerto 8899)
 
-## Estado actual — 21 de septiembre de 2026
+## ⚠️ Estado actual — 22 de septiembre de 2026: EN MANTENIMIENTO
 
-**Publicado y en vivo.**
+**`coatzadrone.cl` no está publicado.** Por decisión del dueño, mientras se
+rehace el flujo de conversión el sitio público muestra una página de aviso con la
+gráfica de la marca, WhatsApp, correo y el enlace al directorio de Pix4D.
+
+- Responde **HTTP 503**, no 200. Es deliberado: le dice a Google que la caída es
+  temporal. Un 200 arriesga que indexe el aviso como si fuera el sitio.
+- El sitio real sigue visible en **<https://coatzadrone-cl.oscaedoh.workers.dev>**,
+  con `X-Robots-Tag: noindex` para que no compita con el dominio principal.
+- `/api/lead` sigue funcionando en ambos dominios.
+
+**Para volver a publicarlo**, cualquiera de los dos:
+
+1. En `worker/index.js`, `MANTENIMIENTO = false`, commit y push
+2. Sin tocar código: en Cloudflare → `coatzadrone-cl` → *Settings* → *Variables
+   and Secrets*, crear la variable **`SITIO_PUBLICO`** con valor **`1`**. Manda por
+   sobre la constante y no necesita deploy.
+
+## Lo que ya estaba resuelto al 21 de septiembre de 2026
+
+(Publicado y en vivo hasta el mantenimiento descrito arriba.)
 
 - **Sitio en producción: <https://coatzadrone.cl>**
 - Repositorio: <https://github.com/Oscaedoh/coatzadrone-cl> (público, rama `main`)
