@@ -26,13 +26,15 @@ var PLANTILLA_NOVEDADES  = 7;   // "Banner · Confirmacion de novedades"
  * los dos reciben la misma secuencia de venta, los del banner marcan spam y
  * eso quema la reputacion del dominio para todos los envios, no solo esos.
  *
- * Se define en Cloudflare como variable LISTA_NOVEDADES con el id de la lista.
- * Mientras no exista, caen en la lista de leads pero SIN la secuencia de
- * venta, que es lo que de verdad importa separar.
+ * El id no es un secreto, asi que va aqui y no hay que configurar nada en el
+ * panel. La variable LISTA_NOVEDADES de Cloudflare lo sobreescribe por si algun
+ * dia hay que cambiarlo sin desplegar.
  */
+var LISTA_NOVEDADES = 7;    // "Lista de Novedades"
+
 function listaNovedades(env) {
   var id = parseInt(env.LISTA_NOVEDADES, 10);
-  return id > 0 ? id : LISTA_LEADS;
+  return id > 0 ? id : LISTA_NOVEDADES;
 }
 
 var REMITENTE = { name: 'CoatzaDrone Chile', email: 'contacto@coatzadrone.cl' };
