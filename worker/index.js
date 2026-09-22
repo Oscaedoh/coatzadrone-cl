@@ -2,9 +2,9 @@
  * Worker de coatzadrone.cl
  *
  * Hace tres cosas, en este orden:
- *   1. Si el sitio esta en mantenimiento, responde la pagina de aviso a todo
- *      el mundo salvo a la URL de trabajo (ver MANTENIMIENTO mas abajo)
- *   2. Atiende POST /api/lead, que guarda el lead en Brevo
+ *   1. Atiende POST /api/lead, que guarda el lead en Brevo. Va primero para
+ *      que siga funcionando aunque el sitio este en mantenimiento
+ *   2. Si el sitio esta en mantenimiento, responde la pagina de aviso
  *   3. Para todo lo demas, entrega el archivo estatico que corresponda
  *
  * La clave de Brevo va como secreto cifrado en Cloudflare (BREVO_API_KEY).
@@ -29,19 +29,11 @@ var WHATSAPP = '56957042650';
  *   b) Sin tocar codigo: en Cloudflare, Settings -> Variables and Secrets,
  *      crear la variable SITIO_PUBLICO con valor 1. Manda por sobre esto.
  *
- * Los dominios de trabajo nunca ven el aviso: ahi seguimos revisando el sitio
- * real mientras el publico ve la pagina de aviso.
+ * No hay dominio de excepcion a proposito: el sitio queda completamente fuera
+ * de linea. Mientras tanto se revisa en local con scripts/servidor-local.ps1
+ * (http://localhost:8899), que no expone nada a internet y no necesita DNS.
  */
 var MANTENIMIENTO = true;
-
-/**
- * Dominios desde los que se ve el sitio real durante el mantenimiento.
- *
- * El de la marca es trabajo.coatzadrone.cl. El *.workers.dev que Cloudflare
- * asigna por defecto lleva el nombre de la cuenta en la URL, asi que no sirve
- * para compartir; queda aqui solo por si el dominio propio se cae.
- */
-var DOMINIOS_DE_TRABAJO = ['trabajo.coatzadrone.cl', '.workers.dev'];
 
 export default {
   async fetch(request, env) {
@@ -54,34 +46,17 @@ export default {
       return manejarLead(request, env);
     }
 
-    if (enMantenimiento(env) && !esDominioDeTrabajo(url)) {
+    if (enMantenimiento(env)) {
       return paginaMantenimiento();
     }
 
-    var respuesta = await env.ASSETS.fetch(request);
-
-    // En el dominio de trabajo el sitio real esta visible mientras dura el
-    // mantenimiento. Que ningun buscador lo indexe y termine compitiendo
-    // con coatzadrone.cl en los resultados.
-    if (esDominioDeTrabajo(url)) {
-      respuesta = new Response(respuesta.body, respuesta);
-      respuesta.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    }
-
-    return respuesta;
+    return env.ASSETS.fetch(request);
   }
 };
 
 function enMantenimiento(env) {
   if (env.SITIO_PUBLICO === '1') return false;
   return MANTENIMIENTO;
-}
-
-function esDominioDeTrabajo(url) {
-  var host = url.hostname.toLowerCase();
-  return DOMINIOS_DE_TRABAJO.some(function (d) {
-    return d.charAt(0) === '.' ? host.slice(-d.length) === d : host === d;
-  });
 }
 
 /**
