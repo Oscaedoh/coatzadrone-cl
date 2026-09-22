@@ -15,10 +15,28 @@ var BREVO = 'https://api.brevo.com/v3';
 
 // Ids del panel de Brevo. Si algun dia se renumeran, se cambian aca.
 var LISTA_LEADS = 3;        // "Leads - Cursos Pix4D"
-var PLANTILLA_BIENVENIDA = 1;
+var PLANTILLA_BIENVENIDA = 1;   // "01 · Bienvenida" — para el formulario
+var PLANTILLA_NOVEDADES  = 7;   // "Banner · Confirmacion de novedades"
+
+/**
+ * Lista para las suscripciones del banner.
+ *
+ * Quien deja su correo en el banner tiene mucha menos intencion que quien
+ * llena el formulario pidiendo que lo contacten por un curso de $275.000. Si
+ * los dos reciben la misma secuencia de venta, los del banner marcan spam y
+ * eso quema la reputacion del dominio para todos los envios, no solo esos.
+ *
+ * Se define en Cloudflare como variable LISTA_NOVEDADES con el id de la lista.
+ * Mientras no exista, caen en la lista de leads pero SIN la secuencia de
+ * venta, que es lo que de verdad importa separar.
+ */
+function listaNovedades(env) {
+  var id = parseInt(env.LISTA_NOVEDADES, 10);
+  return id > 0 ? id : LISTA_LEADS;
+}
+
 var REMITENTE = { name: 'CoatzaDrone Chile', email: 'contacto@coatzadrone.cl' };
 var AVISO_INTERNO = 'contacto@coatzadrone.cl';
-
 var WHATSAPP = '56957042650';
 
 /**
@@ -138,10 +156,13 @@ async function manejarLead(request, env) {
     return json({ ok: true });
   }
 
+  // El banner solo pide correo; el formulario pide bastante mas.
+  var esNovedades = texto(datos.tipo) === 'novedades';
+
   var nombre = texto(datos.nombre);
   var email = texto(datos.email).toLowerCase();
 
-  if (!nombre || !emailValido(email)) {
+  if (!emailValido(email) || (!esNovedades && !nombre)) {
     return json({ ok: false, error: 'datos_incompletos' }, 400);
   }
 
@@ -173,20 +194,31 @@ async function manejarLead(request, env) {
   var atributosFragiles = { ESTADO: 'Nuevo' };
   if (esE164(telefono)) atributosFragiles.SMS = telefono;
 
-  var guardado = await guardarContacto(env, email, atributos, atributosFragiles);
+  var lista = esNovedades ? listaNovedades(env) : LISTA_LEADS;
+
+  var guardado = await guardarContacto(env, email, atributos, atributosFragiles, lista);
   if (!guardado.ok) {
     return json({ ok: false, error: 'brevo_rechazo', detalle: guardado.detalle }, 502);
   }
 
-  // Los dos correos son secundarios: si fallan, el lead ya quedo guardado y no
+  // Los correos son secundarios: si fallan, el contacto ya quedo guardado y no
   // tiene sentido decirle a la persona que algo salio mal.
-  var correos = await Promise.allSettled([
-    enviarBienvenida(env, email, nombre),
-    avisarInterno(env, { nombre: nombre, email: email, telefono: telefono, curso: curso, datos: datos })
-  ]);
+  //
+  // El del banner no recibe la bienvenida del curso ni genera aviso interno:
+  // pidio que lo mantuvieran informado, no que lo contactaran. Tratarlo como
+  // un lead caliente es la forma mas rapida de que se de de baja.
+  var pendientes = esNovedades
+    ? [confirmarNovedades(env, email)]
+    : [
+        enviarBienvenida(env, email, nombre),
+        avisarInterno(env, { nombre: nombre, email: email, telefono: telefono, curso: curso, datos: datos })
+      ];
+
+  var correos = await Promise.allSettled(pendientes);
 
   return json({
     ok: true,
+    tipo: esNovedades ? 'novedades' : 'contacto',
     contacto: guardado.modo,
     correos: correos.map(function (r) { return r.status; })
   });
@@ -194,13 +226,13 @@ async function manejarLead(request, env) {
 
 /* ---------- Brevo ---------- */
 
-async function guardarContacto(env, email, atributos, atributosFragiles) {
+async function guardarContacto(env, email, atributos, atributosFragiles, lista) {
   var completo = Object.assign({}, atributos, atributosFragiles);
 
   var r1 = await brevo(env, '/contacts', {
     email: email,
     attributes: completo,
-    listIds: [LISTA_LEADS],
+    listIds: [lista],
     updateEnabled: true
   });
   if (r1.ok) return { ok: true, modo: 'completo' };
@@ -209,12 +241,23 @@ async function guardarContacto(env, email, atributos, atributosFragiles) {
   var r2 = await brevo(env, '/contacts', {
     email: email,
     attributes: atributos,
-    listIds: [LISTA_LEADS],
+    listIds: [lista],
     updateEnabled: true
   });
   if (r2.ok) return { ok: true, modo: 'sin_sms_ni_estado' };
 
   return { ok: false, detalle: r2.detalle || r1.detalle };
+}
+
+/**
+ * Confirmacion del banner. Corta y sin venta: la persona pidio que la
+ * mantuvieran informada, no que le ofrecieran un curso.
+ */
+function confirmarNovedades(env, email) {
+  return brevo(env, '/smtp/email', {
+    to: [{ email: email }],
+    templateId: PLANTILLA_NOVEDADES
+  });
 }
 
 function enviarBienvenida(env, email, nombre) {

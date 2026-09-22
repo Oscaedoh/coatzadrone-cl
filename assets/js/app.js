@@ -584,7 +584,7 @@
       new FormData(form).forEach(function (v, k) { datos[k] = v; });
       var curso = cursoPorId(datos.curso);
       datos.curso_nombre = curso ? curso.titulo : datos.curso;
-      datos._subject = 'Nueva inscripción — ' + datos.curso_nombre;
+      datos._subject = 'Nueva solicitud de contacto — ' + datos.curso_nombre;
       var proc = origenDeVisita();
       datos.origen = proc.origen;
       datos.campana = proc.campana;
@@ -620,7 +620,7 @@
           form.reset();
           renderSelectCurso();
           estado.className = 'form-estado ok';
-          estado.textContent = '¡Listo! Recibimos tu solicitud. Te contactamos dentro de las próximas 24 horas hábiles.';
+          estado.textContent = '¡Listo! Recibimos tus datos. Te contactamos dentro de las próximas 24 horas hábiles.';
           evento('lead_confirmado', { curso: datos.curso });
           if (typeof window.fbq === 'function') window.fbq('track', 'Lead');
         })
@@ -632,7 +632,149 @@
         })
         .finally(function () {
           btn.disabled = false;
-          btn.textContent = 'Enviar inscripción';
+          btn.textContent = 'Quiero que me contacten';
+        });
+    });
+  }
+
+  /* ---------- Banner de novedades ---------- */
+
+  /**
+   * Barra inferior para captar el correo de quien todavia no esta listo para
+   * inscribirse. Es un publico distinto al del formulario: entra a otra lista
+   * y no recibe la secuencia de venta.
+   *
+   * No aparece al cargar la pagina a proposito. Google penaliza en movil los
+   * avisos que tapan el contenido apenas entras, y ademas molesta antes de que
+   * la persona haya visto nada que le interese.
+   */
+  function configurarBanner() {
+    var banner = $('#bannerNovedades');
+    if (!banner) return;
+
+    var cfg = DATOS.config || {};
+    var endpoint = cfg.formulario_endpoint || '';
+    if (!endpoint || endpoint.indexOf('TU_ID_AQUI') !== -1) return;
+
+    var CLAVE = 'cd_banner';
+    var DIAS_DE_ESPERA = 30;
+
+    if (yaRespondio()) return;
+
+    var form = $('#bannerForm');
+    var input = $('#bannerEmail');
+    var btn = $('#bannerBtn');
+    var estado = $('#bannerEstado');
+    var visible = false;
+
+    function yaRespondio() {
+      try {
+        var guardado = JSON.parse(localStorage.getItem(CLAVE) || 'null');
+        if (!guardado) return false;
+        if (guardado.suscrito) return true;
+        var dias = (Date.now() - guardado.fecha) / 86400000;
+        return dias < DIAS_DE_ESPERA;
+      } catch (e) {
+        return false;   // modo privado o storage bloqueado: mostrarlo igual
+      }
+    }
+
+    function recordar(datos) {
+      try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) { /* da igual */ }
+    }
+
+    function mostrar() {
+      if (visible) return;
+      visible = true;
+      banner.hidden = false;
+      // Forzar un reflujo antes de animar. Con requestAnimationFrame el banner
+      // se quedaba a medias cuando la pestaña no estaba pintando, porque en ese
+      // caso el navegador no ejecuta esos callbacks. Leer offsetHeight obliga a
+      // aplicar el estado inicial en el acto y la transicion siempre arranca.
+      void banner.offsetHeight;
+      banner.classList.add('visible');
+      document.body.classList.add('con-banner');
+      evento('banner_visto', {});
+      quitarDisparadores();
+    }
+
+    function cerrar(suscrito) {
+      visible = false;
+      banner.classList.remove('visible');
+      document.body.classList.remove('con-banner');
+      recordar({ fecha: Date.now(), suscrito: !!suscrito });
+      setTimeout(function () { banner.hidden = true; }, 260);
+    }
+
+    // Se muestra a la mitad de la pagina: para entonces ya vio los cursos.
+    function alDesplazar() {
+      var alto = document.documentElement.scrollHeight - window.innerHeight;
+      if (alto <= 0) return;
+      if ((window.scrollY || window.pageYOffset) / alto > 0.5) mostrar();
+    }
+
+    // El mouse saliendo por arriba suele significar que se va. En tactil no
+    // existe este gesto, por eso el scroll es el disparador principal.
+    function alSalir(e) {
+      if (e.clientY <= 0) mostrar();
+    }
+
+    function quitarDisparadores() {
+      window.removeEventListener('scroll', alDesplazar);
+      document.removeEventListener('mouseout', alSalir);
+    }
+
+    window.addEventListener('scroll', alDesplazar, { passive: true });
+    document.addEventListener('mouseout', alSalir);
+
+    $('#bannerCerrar').addEventListener('click', function () { cerrar(false); });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && visible) cerrar(false);
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      estado.className = 'banner__estado';
+      estado.textContent = '';
+
+      if (!form.checkValidity()) {
+        estado.className = 'banner__estado error';
+        estado.textContent = 'Revisa el correo, parece incompleto.';
+        input.focus();
+        return;
+      }
+
+      var proc = origenDeVisita();
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'novedades',
+          email: input.value.trim(),
+          nombre: '',
+          origen: proc.origen,
+          campana: proc.campana,
+          _gotcha: form._gotcha ? form._gotcha.value : ''
+        })
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          estado.className = 'banner__estado ok';
+          estado.textContent = '¡Listo! Te avisamos apenas abramos fechas.';
+          evento('suscripcion_novedades', { origen: proc.origen });
+          setTimeout(function () { cerrar(true); }, 2200);
+        })
+        .catch(function () {
+          estado.className = 'banner__estado error';
+          estado.textContent = 'No pudimos registrarte. Intenta de nuevo o escríbenos por WhatsApp.';
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Avísenme';
         });
     });
   }
@@ -731,6 +873,7 @@
       renderSelectCurso();
       renderFooterYContacto();
       configurarFormulario();
+      configurarBanner();
       configurarUI();
     })
     .catch(function (e) {
