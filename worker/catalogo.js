@@ -75,6 +75,22 @@ export async function guardarCambios(env, cambios) {
  * completas y no se mezclan: si el panel manda una lista de fechas, esa es la
  * lista. Mezclarlas por posicion haria imposible borrar una.
  */
+/**
+ * Borra los links de los medios apagados.
+ *
+ * Se aplica al LEER, no solo al guardar. Filtrar unicamente a la entrada deja
+ * viva cualquier URL que ya estuviera almacenada de antes, y entonces apagar un
+ * medio no apaga su boton: sigue cobrando por un canal que se decidio no usar.
+ * Aqui el estado de MEDIOS_PAGO manda siempre, sin importar que haya guardado.
+ */
+function soloMediosActivos(pagos) {
+  var p = Object.assign({}, pagos || {});
+  Object.keys(CAMPO_DE_MEDIO).forEach(function (medio) {
+    if (MEDIOS_PAGO.indexOf(medio) === -1) p[CAMPO_DE_MEDIO[medio]] = '';
+  });
+  return p;
+}
+
 export function fusionar(base, cambios) {
   var porCurso = (cambios && cambios.cursos) || {};
 
@@ -89,6 +105,14 @@ export function fusionar(base, cambios) {
     if (c.precio) curso.precio = Object.assign({}, curso.precio, c.precio);
     if (c.pagos)  curso.pagos  = Object.assign({}, curso.pagos,  c.pagos);
     if (Array.isArray(c.cohortes)) curso.cohortes = c.cohortes;
+  });
+
+  // Ultima palabra sobre los medios de pago, venga el link del archivo o de KV.
+  (base.cursos || []).forEach(function (curso) {
+    curso.pagos = soloMediosActivos(curso.pagos);
+    (curso.cohortes || []).forEach(function (ch) {
+      ch.pagos = soloMediosActivos(ch.pagos);
+    });
   });
 
   base.actualizado = (cambios && cambios.actualizado) || null;
