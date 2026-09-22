@@ -2,16 +2,23 @@
  * Worker de coatzadrone.cl
  *
  * Atiende, en este orden:
- *   1. POST /api/lead      — guarda el lead en Brevo
- *   2. GET  /api/cursos     — el catalogo: contenido del repo + precios y
- *                             fechas editados en el panel
- *   3. /admin y /api/admin/* — el panel comercial
- *   4. Si el sitio esta en mantenimiento, la pagina de aviso
- *   5. Para todo lo demas, el archivo estatico que corresponda
  *
- * Los cuatro primeros van ANTES del chequeo de mantenimiento a proposito: se
- * sigue captando leads y se puede seguir preparando el catalogo con el sitio
- * publico abajo.
+ *   Siempre, aunque el sitio este en mantenimiento:
+ *     POST /api/lead            guarda el lead en Brevo
+ *     GET  /api/cursos          el catalogo publico
+ *     GET  /media/<id>          imagenes subidas desde el panel
+ *     /admin y /api/admin/*     el panel comercial
+ *
+ *   Si el sitio esta en mantenimiento y no hay vista previa, la pagina de aviso.
+ *
+ *   Paginas:
+ *     /                         la portada
+ *     /cursos/<id>              la landing de un curso
+ *     /sitemap.xml              generado con el catalogo del momento
+ *     todo lo demas             el archivo estatico que corresponda
+ *
+ * Lo primero va antes del chequeo de mantenimiento a proposito: se sigue
+ * captando leads y se puede seguir armando el catalogo con el sitio abajo.
  *
  * Las claves (BREVO_API_KEY, ADMIN_CLAVE) van como secretos cifrados en
  * Cloudflare. Nunca en este archivo: el repositorio es publico.
@@ -19,6 +26,9 @@
 
 import * as catalogo from './catalogo.js';
 import * as admin from './admin.js';
+import * as media from './media.js';
+import * as paginas from './paginas.js';
+import * as vista from './vista.js';
 
 var BREVO = 'https://api.brevo.com/v3';
 
@@ -58,9 +68,10 @@ var WHATSAPP = '56957042650';
  *   b) Sin tocar codigo: en Cloudflare, Settings -> Variables and Secrets,
  *      crear la variable SITIO_PUBLICO con valor 1. Manda por sobre esto.
  *
- * No hay dominio de excepcion a proposito: el sitio queda completamente fuera
- * de linea. Mientras tanto se revisa en local con scripts/servidor-local.ps1
- * (http://localhost:8899), que no expone nada a internet y no necesita DNS.
+ * No hay dominio de excepcion a proposito: el sitio queda fuera de linea para
+ * el publico. El dueno lo ve igual: al entrar al panel recibe una cookie de
+ * vista previa firmada con su clave (worker/vista.js), y con ella navega el
+ * sitio real en coatzadrone.cl.
  */
 var MANTENIMIENTO = true;
 
@@ -79,23 +90,59 @@ export default {
       try {
         return await catalogo.entregar(env);
       } catch (e) {
-        // Si algo falla al fusionar, que el sitio siga cargando: se entrega el
-        // archivo del repositorio tal cual y se pierden solo los cambios del panel.
+        // Si algo falla, que el sitio siga cargando con el catalogo inicial.
         return env.ASSETS.fetch(new URL('/data/cursos.json', url).toString());
       }
     }
 
-    if (url.pathname === '/api/admin/datos') {
-      return admin.api(request, env);
+    if (url.pathname.indexOf('/media/') === 0) {
+      return media.servir(env, url.pathname.slice('/media/'.length));
     }
+
+    var api = url.pathname.match(/^\/api\/admin\/(datos|media|vista|salir)$/);
+    if (api) return admin.api(request, env, api[1]);
 
     if (url.pathname === '/admin' || url.pathname === '/admin/') {
-      return admin.pagina();
+      return admin.pagina(request, env);
+    }
+    if (url.pathname.indexOf('/admin/') === 0) {
+      var r = await env.ASSETS.fetch(request);
+      var h = new Headers(r.headers);
+      h.set('X-Robots-Tag', 'noindex, nofollow');
+      h.set('Cache-Control', 'no-cache');
+      return new Response(r.body, { status: r.status, headers: h });
     }
 
-    if (enMantenimiento(env)) {
-      return paginaMantenimiento();
+    // Con la cookie de vista previa, el dueno ve el sitio real aunque el
+    // publico vea el aviso, y puede abrir cursos ocultos. Ver worker/vista.js.
+    var mantenimiento = enMantenimiento(env);
+    // Solo se verifica la firma cuando importa: con el sitio publicado, un CSS
+    // o una imagen no necesitan saber si quien los pide es el dueno.
+    var vistaPrevia = (mantenimiento || url.pathname.indexOf('/cursos/') === 0)
+      ? await vista.valida(request, env)
+      : false;
+    if (mantenimiento && !vistaPrevia) return paginaMantenimiento();
+    var opciones = { vistaPrevia: vistaPrevia, mantenimiento: mantenimiento };
+
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      if (url.pathname === '/index.html') {
+        return Response.redirect(new URL('/' + url.search, url).toString(), 301);
+      }
+      try {
+        return await paginas.inicio(request, env, opciones);
+      } catch (e) {
+        return env.ASSETS.fetch(request);
+      }
     }
+
+    if (url.pathname === '/cursos' || url.pathname === '/cursos/') {
+      return Response.redirect(new URL('/#cursos', url).toString(), 301);
+    }
+
+    var ruta = url.pathname.match(/^\/cursos\/([a-z0-9-]{1,80})\/?$/);
+    if (ruta) return paginas.curso(request, env, ruta[1], opciones);
+
+    if (url.pathname === '/sitemap.xml') return paginas.sitemap(env);
 
     return env.ASSETS.fetch(request);
   }

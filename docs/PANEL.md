@@ -1,160 +1,214 @@
 # El panel comercial — `/admin`
 
-Para cambiar precios, fechas y links de pago sin tocar código ni esperar un
-deploy.
+Donde se administran los cursos y los instructores: todo lo que se muestra de
+ellos en el sitio, sin tocar código ni esperar un deploy.
 
 <https://coatzadrone.cl/admin>
 
 ---
 
-## La idea de fondo: lo que se vende es la fecha
+## Cómo está organizado
 
-Un curso no es un producto. El producto es la **edición**:
+Funciona como el panel de una tienda. Arriba, dos pestañas:
 
-> *Pix4Dfields, del 10 al 12 de noviembre, 12 cupos, $275.000, este link de pago.*
-
-El mismo curso puede tener tres ediciones al año, cada una con su fecha, su cupo,
-su precio y su propio botón de pago. Por eso todo lo comercial vive en la edición
-y no en el curso.
-
-Eso separa el proyecto en dos mitades que cambian a ritmos distintos:
-
-| | Dónde vive | Quién lo cambia | Cada cuánto |
-|---|---|---|---|
-| Temario, instructor, textos, fotos | `data/cursos.json`, en el repositorio | con un commit | rara vez |
-| **Precio, fechas, cupos, links de pago** | **el panel** | **tú, en el navegador** | **seguido** |
-
-La página pide `/api/cursos`, que entrega las dos mitades unidas. Si el panel
-nunca se usó, sale el archivo tal cual: **nada se rompe por no tocarlo**.
-
----
-
-## Lo que falta para que guarde
-
-Son dos cosas en el panel de Cloudflare. Mientras no estén, el panel abre, deja
-editar y muestra el resultado para copiar, pero el botón de guardar no publica.
-
-### 1. La clave de acceso
-
-*Workers & Pages* → `coatzadrone-cl` → *Settings* → *Variables and Secrets* → **Add**
-
-| Campo | Valor |
+| Pestaña | Qué hay |
 |---|---|
-| Type | **Secret** |
-| Variable name | `ADMIN_CLAVE` |
-| Value | la clave que elijas |
+| **Cursos** | El listado de productos: foto, nombre, visibilidad, próxima fecha y precio. Clic en uno para abrir su ficha |
+| **Instructores** | Quiénes dictan los cursos, con foto, biografía y enlaces para verificar su certificación |
 
-**Deploy** para que tome efecto.
+Todo lo que cambias queda en borrador en la pantalla hasta que pulsas **Guardar y
+publicar** (o `Ctrl+S`). La barra de abajo avisa en amarillo cuando hay cambios sin
+guardar, y el navegador te advierte si intentas cerrar la pestaña con cambios
+pendientes.
 
-> Que sea larga y que no la uses en ningún otro lado. Esta clave abre los precios
-> de tu sitio: quien entre puede poner un curso en $1.
->
-> Sin este secreto el panel queda **cerrado**, no abierto. Es a propósito: un
-> panel sin clave configurada que dejara entrar sería peor que no tenerlo.
-
-### 2. El almacén
-
-*Storage & Databases* → *KV* → **Create** → nombre `coatzadrone-comercio`
-
-Eso entrega un **id**. Pásamelo y lo conecto: hay que descomentar tres líneas en
-`wrangler.jsonc` y hacer push. El id no es un secreto —solo identifica el
-almacén, y sin tu cuenta no sirve de nada—, así que puede ir al repositorio.
+> Al guardar, el cambio llega a la página en **menos de un minuto**. No es
+> instantáneo en todo el mundo: Cloudflare replica los datos a sus servidores y
+> eso toma unos segundos.
 
 ---
 
-## Cómo se usa
+## La ficha de un curso
 
-Entras, escribes la clave y ves cada curso en una tarjeta.
+A la izquierda, el contenido; a la derecha, lo comercial.
 
-**El nombre del curso** se edita donde se lee: el título de arriba es un campo.
-Se ve como un título hasta que lo tocas, para no tener el mismo dato en dos
-lados. Si lo dejas en blanco **no borra nada**: se queda el nombre anterior.
+**Información** — nombre, subtítulo y resumen. El resumen es el texto de la
+tarjeta del curso y también el que muestran Google, Facebook y WhatsApp cuando
+alguien comparte el enlace.
 
-**Valores por defecto.** Estado, valor, preventa y link de pago del curso. Se
-usan cuando una edición no define los suyos, así que evitan repetir lo mismo en
-cada fecha. El estado —*Inscripciones abiertas* o *Próximamente*— cambia la
-etiqueta de la tarjeta y si el botón invita a comprar o a dejar datos.
+**Ficha** — software, nivel, modalidad, duración, idioma.
 
-**Observaciones del curso.** Texto libre que aparece en la página junto al valor,
-en un recuadro aparte. Para lo que no calza en ningún campo: *"Incluye factura"*,
-*"Descuentos para equipos de 3 o más"*. Respeta los saltos de línea.
+**Descripción** — el objetivo del programa y el enfoque. Una línea en blanco
+separa párrafos.
 
-**Fechas a la venta.** Una tarjeta por edición, con todo en una sola pasada:
+**Contenido** — a quién está dirigido, qué logras al terminar, qué incluye y por
+qué tomarlo. **Una idea por línea.** Los cuatro primeros de «Qué incluye» salen
+junto al precio: pon arriba los más convincentes.
 
-| | |
+**Temario** — un bloque por módulo, con título, objetivo y contenidos. Se pueden
+reordenar con las flechas.
+
+**Fechas a la venta** — una tarjeta por edición, con todo lo de esa fecha en una
+pasada: días, horario, cupos, estado, valor, preventa, link de pago y
+observaciones. Lo que dejes vacío usa lo del curso.
+
+**Requisitos técnicos** — opcional. Si lo dejas vacío, la sección no aparece.
+
+Y a la derecha:
+
+| Bloque | Para qué |
 |---|---|
-| Desde · Hasta · Horario | cuándo es |
-| Cupos · Disponibles · Estado | *Abierta*, *Últimos cupos*, *Agotada* u *Oculta* |
-| Valor · Preventa · Preventa hasta | qué cuesta esta edición |
-| Link de pago | dónde se paga esta edición |
-| Observaciones de esta fecha | sale junto a esa fecha en el calendario |
+| **Visibilidad** | *Publicado en la página* lo muestra u oculta. El estado dice si las inscripciones están abiertas o próximas |
+| **Imagen** | La foto del curso. *Subir imagen* o *Elegir existente* |
+| **Precio y pago** | Valor general, preventa, link de pago de Flow y observaciones junto al precio |
+| **Instructores** | Quiénes lo dictan. Se marcan de la lista |
+| **Dirección de la página** | `coatzadrone.cl/cursos/...` — el enlace para los anuncios |
 
-*Agregar una fecha* crea otra tarjeta y te deja el cursor en el primer día, para
-seguir escribiendo sin buscar dónde quedó.
-
-> Lo que dejes vacío en una edición hereda el valor general del curso. Solo lo
-> llenas cuando esa fecha vale distinto o se paga por otro lado.
-
-*Guardar y publicar* lo deja online al instante. No hay deploy de por medio.
-
-### Medios de pago habilitados
-
-Hoy solo **Flow / Webpay**, por decisión del dueño. Mercado Pago y PayPal están
-apagados: el panel no muestra su casilla y, si llegara un link de esos medios, se
-descarta al guardar. Así apagar un medio lo apaga de verdad y no queda un botón
-vivo cobrando por un canal que se decidió no usar.
-
-No se borró el soporte. Volver a encender uno es agregar su nombre a la lista
-`MEDIOS_PAGO` en `worker/catalogo.js` — una línea, y el panel dibuja la casilla
-solo.
+Arriba de la ficha: **Ver en el sitio**, **Duplicar** y **Eliminar**.
 
 ---
 
-## Qué hace cada cosa en la página
+## Crear un curso
+
+1. *Cursos* → **+ Nuevo curso**
+2. Escribe el nombre. La dirección de la página se arma sola a partir de él
+3. Completa lo que tengas. Nada es obligatorio salvo el nombre
+4. **Guardar y publicar**
+
+Un curso nuevo nace **oculto**, a propósito: puedes armarlo con calma y revisarlo
+en su página real antes de que nadie más lo vea. Cuando esté listo, activa
+*Publicado en la página* y guarda.
+
+**Duplicar** sirve para crear uno parecido a otro: copia todo el contenido, pero
+no las fechas ni el link de pago, que son de cada producto. Si los copiara,
+terminarías con dos cursos cobrando en el mismo botón de Flow.
+
+---
+
+## Sacar un curso de la página
+
+Dos formas, según lo que quieras:
+
+- **Ocultarlo** (desmarcar *Publicado en la página*): desaparece del sitio y su
+  dirección deja de funcionar, pero todo queda guardado para volver a
+  publicarlo. Es lo que conviene casi siempre
+- **Eliminarlo**: se borra definitivamente al guardar
+
+---
+
+## Fechas, precios y pago
+
+Lo que se vende no es el curso: es la **edición**. Una fecha concreta, con su
+cupo, su precio y su link de pago. Un curso puede tener varias al año.
 
 | En el panel | En la página |
 |---|---|
-| Cargas un link de pago | El botón deja de ir al formulario y lleva directo al checkout |
-| Dejas los links vacíos | El botón baja al formulario de contacto, como antes |
-| Pones precio de preventa y una fecha tope | Se muestra el precio rebajado, y **vuelve solo al normal** al pasar esa fecha |
-| Marcas una edición *Agotada* | Desaparecen los botones de pago y queda *Avísenme de la próxima* |
-| Marcas una edición *Oculta* | Deja de aparecer, sin borrarla |
-| Agregas una fecha | Sale en el calendario, con su `.ics` y su enlace a Google Calendar |
+| Cargas un link de pago | Los botones llevan directo al checkout de Flow |
+| Dejas el link vacío | Los botones llevan al formulario de contacto |
+| Preventa con fecha tope | Se muestra el precio rebajado y **vuelve solo al normal** al pasar esa fecha |
+| Marcas una fecha *Agotada* | Desaparece el botón de pago y queda *Avísenme de la próxima* |
+| Marcas una fecha *Oculta* | Deja de aparecer, sin borrarla |
+| Un curso sin fechas | Sale como **«Por anunciar»**, con el botón *Avísenme* |
 
-La preventa venciendo sola es el detalle que más se agradece: sin eso, un
-descuento de lanzamiento se queda puesto para siempre porque nadie se acuerda de
-sacarlo.
+Las fechas que ya terminaron se esconden solas: no hay que borrarlas.
+
+### El «Próximo workshop» de la portada se elige solo
+
+Es la fecha más cercana entre los cursos publicados que todavía tiene cupos. Si
+ningún curso tiene fecha, se muestra el primero del listado del panel. Por eso el
+**orden del listado importa**: es el orden de la página, y define qué curso se
+destaca cuando no hay calendario.
+
+### Medios de pago
+
+Hoy solo **Flow / Webpay**. Mercado Pago y PayPal están apagados: no aparecen en
+el panel y, si hubiera un link guardado de esos medios, no sale en la página.
+Volver a encender uno es agregar su nombre a `MEDIOS_PAGO` en `worker/catalogo.js`.
+
+En Flow lo que corresponde es el **Botón de Pago** (reutilizable, se incrusta en
+el sitio), no el *Link de Pago*, que es de un solo cliente. Ver [PAGOS.md](PAGOS.md).
 
 ---
 
-## Lo que el panel no deja hacer
+## La dirección de cada curso
 
-Por diseño solo puede tocar el nombre, las observaciones, `estado`, `precio`,
-`pagos` y las fechas. **No** puede cambiar el temario, el instructor ni los textos
-largos: eso va por commit, con historial, porque es contenido que se redacta y se
-revisa, no un dato que se ajusta.
+Cada curso tiene su propia página: `coatzadrone.cl/cursos/<dirección>`. Es la que
+se usa en los anuncios de Meta y Google, con los parámetros de campaña:
 
-Todo lo que entra se valida antes de guardarse:
+```
+https://coatzadrone.cl/cursos/pix4dfields-agricultura-precision?utm_source=meta&utm_medium=cpc&utm_campaign=pix4dfields-octubre
+```
 
-- los links de pago tienen que empezar con `https://` — así un enlace raro no
-  puede terminar nunca en el botón de comprar
-- una fecha sin día de inicio se descarta: sin fecha no hay producto
-- los montos se guardan como números enteros, y los estados solo aceptan los
-  valores de la lista
+**Cambiar la dirección no rompe los anuncios.** La anterior queda redirigiendo a
+la nueva, conservando los parámetros de campaña. Aun así, conviene fijarla antes
+de lanzar la primera campaña y no volver a tocarla.
+
+---
+
+## Instructores
+
+*Instructores* → **+ Nuevo instructor**: foto, nombre, cargo, biografía y enlaces
+de verificación (por ejemplo, su certificado en training.pix4d.com). Después, en
+la ficha de cada curso, se marca quién lo dicta.
+
+Un instructor puede dictar varios cursos, y un curso puede tener varios
+instructores. Si eliminas un instructor, los cursos que dictaba quedan sin él.
+
+---
+
+## Imágenes
+
+Se suben desde el panel y el navegador las **achica antes de subir**: 1600 px
+para los cursos, 800 px para las fotos de instructores. Una foto de celular pesa
+4 o 5 MB; así queda en unos 200 KB y se ve igual, que es lo que decide si la
+página carga rápido en 4G.
+
+Se aceptan JPG, PNG y WebP. Las imágenes que dejan de usarse se borran solas al
+guardar.
+
+*Elegir existente* muestra las imágenes del sitio y las que ya subiste, para
+reusarlas sin volver a subirlas.
+
+---
+
+## Ver el sitio mientras está en mantenimiento
+
+Al entrar al panel, tu navegador queda habilitado por 8 horas para ver el sitio
+**real** en `coatzadrone.cl`, aunque el público siga viendo el aviso de
+mantenimiento. Una etiqueta roja abajo a la izquierda te recuerda que estás en
+vista previa.
+
+Lo mismo sirve para los cursos ocultos: *Ver en el sitio* abre su página real,
+solo para ti.
+
+Técnicamente es una cookie firmada con tu clave: no contiene la clave, no se
+puede falsificar, y si cambias la clave en Cloudflare deja de servir en el acto.
+
+---
+
+## Lo que el panel no edita
+
+Las **preguntas frecuentes** y los datos de contacto (WhatsApp, correo, ids de
+analítica) siguen en `data/cursos.json`, en `faq` y `config`. Cambian muy rara vez.
+
+`data/cursos.json` también guarda el **catálogo inicial**: lo que se muestra si el
+panel nunca se ha guardado o si el almacén no responde. El sitio nunca queda en
+blanco por una falla del panel.
 
 ---
 
 ## Seguridad
 
-- La clave se compara **en tiempo constante**. Una comparación normal corta apenas
-  encuentra una letra distinta, y esa diferencia de microsegundos deja adivinarla
-  carácter por carácter.
-- Cada intento fallido espera 600 ms antes de responder. Probar claves a ciegas
-  pasa a tomar años.
-- El panel responde `noindex` y no está enlazado desde ninguna parte del sitio.
-  **No lo agregamos a `robots.txt` a propósito**: ese archivo es público y
-  listarlo ahí sería un cartel diciendo dónde está la puerta.
-- La clave queda en `sessionStorage`: se borra al cerrar la pestaña.
+- Se entra con la clave del secreto `ADMIN_CLAVE` de Cloudflare. Sin ese secreto,
+  el panel queda **cerrado**, no abierto
+- La clave se compara en tiempo constante, y cada intento fallido espera 600 ms
+- Todo lo que se guarda se valida en el servidor: los links tienen que ser
+  `https://`, las imágenes solo pueden ser las subidas al panel o las del sitio,
+  y un archivo se acepta como imagen por su contenido real, no por su nombre
+- Si alguien guarda desde otra pestaña, la tuya no pisa esos cambios: te avisa
+  y te pide recargar
+- El panel responde `noindex` y no está enlazado desde el sitio. No se agregó a
+  `robots.txt` a propósito: ese archivo es público y sería un cartel diciendo
+  dónde está la puerta
 
 ---
 
@@ -163,9 +217,10 @@ Todo lo que entra se valida antes de guardarse:
 | Qué ves | Qué pasa |
 |---|---|
 | «El panel todavía no tiene clave configurada» | Falta el secreto `ADMIN_CLAVE` |
-| «Falta crear el almacén» al guardar | Falta el KV, o falta conectar su id |
+| «Falta el almacén» | El binding `CONFIG` de KV no está conectado en `wrangler.jsonc` |
 | «Clave incorrecta» | Eso mismo. No hay recuperación: se cambia el secreto en Cloudflare |
-| La página no refleja un cambio | Recarga con Ctrl+F5. `/api/cursos` no se cachea, pero el navegador sí puede guardar la página |
+| «Hubo cambios desde otra ventana» | Guardaste desde otra pestaña. Recarga |
+| La lista de errores al guardar | Un curso sin nombre, una fecha sin día de inicio o un link sin `https://`. Clic en cada error para ir al campo |
+| La página no refleja un cambio | Espera un minuto y recarga con `Ctrl+F5` |
 
-Ver también [PAGOS.md](PAGOS.md) para crear los links de pago, y
-[GUIA-AGREGAR-CURSOS.md](GUIA-AGREGAR-CURSOS.md) para el contenido de un curso nuevo.
+Ver también [PAGOS.md](PAGOS.md) para crear los links de pago.

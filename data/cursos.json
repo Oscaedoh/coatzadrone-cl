@@ -1,5 +1,25 @@
 {
-  "_comentario": "Fuente unica de verdad de los cursos. Para agregar un curso, copia un bloque de 'cursos' y edita los campos. Ver docs/GUIA-AGREGAR-CURSOS.md",
+  "_comentario": "Catalogo INICIAL. Los cursos y los instructores se administran en /admin y se guardan en Cloudflare KV; este archivo solo se usa si el panel nunca se ha guardado o si KV no responde. 'config' y 'faq' si se leen siempre de aqui. Ver docs/PANEL.md",
+  "formato": 2,
+  "imagenes_sitio": [
+    "assets/img/Coatzadrone-precision-agriculture.jpg",
+    "assets/img/Coatzadrone-mining-industry.jpg",
+    "assets/img/Coatzadrone-energy.jpg",
+    "assets/img/Coatzadrone-hero-bg.jpg",
+    "assets/img/CoatzaDrone-blog_bg.jpg"
+  ],
+  "instructores": [
+    {
+      "id": "arturo-salaises",
+      "nombre": "Ing. Arturo Salaises Chairez",
+      "cargo": "Instructor certificado Pix4D · PIX4Dfields",
+      "bio": "Ingeniero en Agricultura Sostenible, egresado de la Universidad Autónoma Chapingo, con formación y experiencia en agricultura de precisión, análisis geoespacial y teledetección aplicada a sistemas productivos agrícolas. Su trabajo integra el uso de drones, sensores y software especializado para generar información técnica confiable, enfocada en el diagnóstico del cultivo y la toma de decisiones agronómicas oportunas en campo.",
+      "foto": "",
+      "enlaces": [
+        { "texto": "Ver certificación Pix4D", "url": "https://training.pix4d.com/certificates/afeenai4o" }
+      ]
+    }
+  ],
   "config": {
     "moneda_principal": "CLP",
     "whatsapp": "56957042650",
@@ -14,7 +34,6 @@
     {
       "id": "pix4dfields-agricultura-precision",
       "activo": true,
-      "destacado": true,
       "estado": "inscripciones-abiertas",
       "titulo": "Pix4Dfields aplicado a Agricultura de Precisión",
       "subtitulo": "Del procesamiento de información geoespacial a la toma de decisiones agronómicas en campo",
@@ -131,13 +150,7 @@
           "Conexión a internet estable para las sesiones en vivo"
         ]
       },
-      "instructor": {
-        "nombre": "Ing. Arturo Salaises Chairez",
-        "cargo": "Instructor certificado Pix4D · PIX4Dfields",
-        "bio": "Ingeniero en Agricultura Sostenible, egresado de la Universidad Autónoma Chapingo, con formación y experiencia en agricultura de precisión, análisis geoespacial y teledetección aplicada a sistemas productivos agrícolas. Su trabajo integra el uso de drones, sensores y software especializado para generar información técnica confiable, enfocada en el diagnóstico del cultivo y la toma de decisiones agronómicas oportunas en campo.",
-        "certificado_url": "https://training.pix4d.com/certificates/afeenai4o",
-        "foto": ""
-      },
+      "instructores": ["arturo-salaises"],
       "cohortes": [],
       "precio": {
         "clp": 275000,
@@ -156,7 +169,6 @@
     {
       "id": "pix4dmapper-fotogrametria",
       "activo": true,
-      "destacado": false,
       "estado": "proximamente",
       "titulo": "Pix4Dmapper · Fotogrametría y Mapeo Profesional",
       "subtitulo": "Procesamiento fotogramétrico de alta precisión para topografía, construcción e ingeniería",
@@ -185,7 +197,7 @@
       "modulos": [],
       "resultados": [],
       "requisitos_tecnicos": { "nota": "", "items": [] },
-      "instructor": { "nombre": "", "cargo": "", "bio": "", "certificado_url": "", "foto": "" },
+      "instructores": [],
       "cohortes": [],
       "precio": { "clp": null, "clp_early": null, "early_hasta": null, "usd": null, "nota": "" },
       "pagos": { "mercadopago_url": "", "flow_url": "", "paypal_url": "", "transferencia": true }
@@ -193,7 +205,6 @@
     {
       "id": "pix4dmatic-pix4dsurvey",
       "activo": true,
-      "destacado": false,
       "estado": "proximamente",
       "titulo": "PIX4Dmatic + PIX4Dsurvey · Corredores y Gran Escala",
       "subtitulo": "Procesamiento de grandes volúmenes y extracción de entregables CAD para topografía",
@@ -220,7 +231,7 @@
       "modulos": [],
       "resultados": [],
       "requisitos_tecnicos": { "nota": "", "items": [] },
-      "instructor": { "nombre": "", "cargo": "", "bio": "", "certificado_url": "", "foto": "" },
+      "instructores": [],
       "cohortes": [],
       "precio": { "clp": null, "clp_early": null, "early_hasta": null, "usd": null, "nota": "" },
       "pagos": { "mercadopago_url": "", "flow_url": "", "paypal_url": "", "transferencia": true }

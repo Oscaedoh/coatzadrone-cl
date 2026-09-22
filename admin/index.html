@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel comercial · CoatzaDrone Chile</title>
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/admin/panel.css?v=2">
+</head>
+<body>
+
+<!-- Puerta: sin clave no se ve nada. La clave se verifica en el servidor. -->
+<div id="puerta" class="puerta">
+  <img src="/assets/img/logo-coatzadrone.svg" alt="CoatzaDrone" width="170" height="30">
+  <h1>Panel comercial</h1>
+  <p>Cursos, fechas, precios e instructores de <strong>coatzadrone.cl</strong></p>
+  <form id="formClave">
+    <label for="clave">Clave de acceso</label>
+    <input id="clave" type="password" autocomplete="current-password" required>
+    <button class="btn btn--rojo btn--bloque">Entrar</button>
+  </form>
+  <div id="puertaError" class="aviso aviso--mal" hidden></div>
+</div>
+
+<div id="app" hidden>
+  <header class="barra">
+    <a class="barra__marca" href="#/cursos">Panel <span>comercial</span></a>
+    <nav class="pestanas" aria-label="Secciones">
+      <a href="#/cursos" data-pestana="cursos">Cursos <span class="contador" id="numCursos">0</span></a>
+      <a href="#/instructores" data-pestana="instructores">Instructores <span class="contador" id="numInstructores">0</span></a>
+    </nav>
+    <span class="barra__sep"></span>
+    <a class="btn btn--mini" href="/" target="_blank" rel="noopener">Ver sitio ↗</a>
+    <button class="btn btn--mini" id="salir" type="button">Salir</button>
+  </header>
+
+  <div class="env">
+    <div id="avisoGeneral" class="aviso aviso--mal" hidden></div>
+    <main id="vista"></main>
+  </div>
+
+  <div class="pie" id="pie">
+    <span class="pie__estado" id="estado">Sin cambios</span>
+    <button class="btn" id="descartar" type="button" hidden>Descartar cambios</button>
+    <button class="btn btn--rojo" id="guardar" type="button">Guardar y publicar</button>
+  </div>
+</div>
+
+<!-- Selector de imágenes del sitio -->
+<dialog id="dlgImagenes" class="dialogo">
+  <form method="dialog">
+    <h2>Elegir una imagen del sitio</h2>
+    <div class="galeria" id="galeria"></div>
+    <div class="dialogo__pie"><button class="btn" value="cancelar">Cancelar</button></div>
+  </form>
+</dialog>
+
+<script src="/admin/panel.js?v=2"></script>
+</body>
+</html>

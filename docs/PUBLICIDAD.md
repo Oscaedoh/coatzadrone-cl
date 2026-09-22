@@ -10,17 +10,33 @@ describe lo que el sitio **ya trae listo** y lo que hay que activar.
 Apenas cargues `ga4_id` y `meta_pixel_id` en `data/cursos.json`, estos eventos
 empiezan a registrarse solos:
 
-| Evento | Cuándo se dispara |
-|---|---|
-| `click_cta_curso` | El visitante pulsa "Inscribirme" en una tarjeta de curso |
-| `cta_precio` | Pulsa "Reservar mi cupo" en el bloque de precio |
-| `agregar_calendario` | Descarga el `.ics` o abre Google Calendar |
-| `enviar_inscripcion` | Envía el formulario |
-| `lead_confirmado` | El formulario se envió con éxito |
-| `Lead` (Meta) | Evento estándar de Meta, para optimizar campañas por conversión |
+| Evento GA4 | Evento Meta | Cuándo se dispara |
+|---|---|---|
+| `view_item` | `ViewContent` | Alguien abre la página de un curso |
+| `iniciar_pago` | `InitiateCheckout` | Pulsa un botón de pago (va al checkout de Flow) |
+| `click_cta_curso` | — | Pulsa un botón que baja al formulario con el curso elegido |
+| `agregar_calendario` | — | Descarga el `.ics` o abre Google Calendar |
+| `enviar_inscripcion` | — | Envía el formulario |
+| `lead_confirmado` | `Lead` | El formulario se envió con éxito |
 
-Cada evento incluye el `id` del curso y el país, para que puedas saber qué curso y
-qué mercado responde mejor.
+Cada evento lleva el `id` del curso, y los de Meta también el valor en CLP, para
+que puedas saber qué curso responde mejor y optimizar por valor.
+
+---
+
+## A dónde apuntar cada anuncio
+
+A la **página del curso**, no a la portada: `coatzadrone.cl/cursos/<curso>`.
+
+Esa página está pensada para quien llega desde un anuncio. Arriba de todo, sin
+bajar, están el nombre, la fecha, el precio y el botón de pago; en celular, una
+barra fija mantiene el precio y el botón a la mano mientras se lee el temario. Y
+al compartirla, Facebook y WhatsApp muestran el título, la descripción y la
+imagen de ese curso, no los genéricos del sitio.
+
+La dirección de cada curso está en su ficha del panel. Fíjala antes de la
+primera campaña: si después cambia, la anterior redirige a la nueva y los
+anuncios no se rompen, pero lo prolijo es no tocarla.
 
 ---
 

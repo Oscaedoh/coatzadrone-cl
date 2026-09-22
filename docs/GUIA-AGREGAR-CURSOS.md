@@ -1,137 +1,39 @@
 # Cómo agregar o editar un curso
 
-El **contenido** de los cursos vive en `data/cursos.json`: temario, instructor,
-textos, imágenes. **No se toca HTML, CSS ni JavaScript.**
+**Todo se hace en el panel:** <https://coatzadrone.cl/admin>
 
-> **Los precios y las fechas ya no se editan aquí.** Van en el panel
-> <https://coatzadrone.cl/admin>, que publica al instante y sin commit. Los campos
-> `precio`, `pagos`, `estado` y `cohortes` de este archivo quedan solo como valor
-> inicial: si el panel tiene algo cargado para ese curso, manda el panel.
-> Ver [PANEL.md](PANEL.md).
->
-> Sigue en el JSON todo lo que se redacta y se revisa, porque conviene que quede
-> con historial. Un curso nuevo se crea acá; sus fechas y su precio, en el panel.
+1. *Cursos* → **+ Nuevo curso**, o clic en uno existente para editarlo
+2. Completa la ficha: textos, imagen, temario, instructores, precio y fechas
+3. Activa **Publicado en la página** cuando esté listo
+4. **Guardar y publicar**
+
+No se toca código ni hay que esperar un deploy. La guía completa, con qué hace
+cada campo en la página, está en [PANEL.md](PANEL.md).
 
 ---
 
-## La forma más simple: editar desde GitHub
+## Lo que sigue en el repositorio
 
-1. Entra al repositorio en github.com
-2. Abre `data/cursos.json`
-3. Haz clic en el lápiz ✏️ (*Edit this file*)
-4. Edita y presiona **Commit changes**
-5. En menos de un minuto el cambio está publicado en coatzadrone.cl
+`data/cursos.json` ya no es donde se editan los cursos. Quedan ahí tres cosas:
 
-No necesitas instalar nada.
+| Clave | Qué es | Se edita en |
+|---|---|---|
+| `config` | WhatsApp, correo, ids de GA4 y del Píxel de Meta | este archivo |
+| `faq` | Las preguntas frecuentes | este archivo |
+| `cursos`, `instructores` | El catálogo **inicial** | el panel manda por sobre esto |
 
----
+El catálogo inicial es un respaldo: es lo que se muestra si el panel nunca se ha
+guardado o si el almacén de Cloudflare no responde. Una vez que guardas desde el
+panel, lo que está aquí en `cursos` e `instructores` deja de mostrarse.
 
-## Agregar un curso nuevo
+Para editar `config` o `faq` desde GitHub:
 
-Copia el bloque completo de un curso existente (desde `{` hasta el `}` que le
-corresponde), pégalo dentro de `"cursos": [ ... ]` separado por una coma, y cambia
-los campos.
+1. Entra al repositorio en github.com y abre `data/cursos.json`
+2. Clic en el lápiz ✏️ (*Edit this file*)
+3. Edita y presiona **Commit changes**
+4. En un par de minutos el cambio está publicado
 
-### Campos mínimos para que un curso se vea bien
-
-```json
-{
-  "id": "pix4dcloud-inspeccion",
-  "activo": true,
-  "destacado": false,
-  "estado": "inscripciones-abiertas",
-  "titulo": "PIX4Dcloud para inspección de activos",
-  "subtitulo": "Procesamiento en la nube y entrega de reportes al cliente",
-  "software": "PIX4Dcloud",
-  "nivel": "Intermedio",
-  "modalidad": "Online en vivo",
-  "duracion": "8 horas · 2 sesiones de 4 horas",
-  "idioma": "Español",
-  "imagen": "assets/img/Coatzadrone-energy.jpg",
-  "resumen": "Una o dos frases que se leen en la tarjeta del curso.",
-  "dirigido_a": ["Perfil 1", "Perfil 2"],
-  "incluye": ["Certificado oficial Pix4D", "Material del curso"],
-  "modulos": [],
-  "cohortes": [],
-  "precio": { "clp": null, "usd": null },
-  "pagos": { "mercadopago_url": "", "flow_url": "", "paypal_url": "", "transferencia": true }
-}
-```
-
----
-
-## Qué hace cada campo
-
-| Campo | Qué controla |
-|---|---|
-| `id` | Identificador interno. Sin espacios ni tildes, usa guiones. Debe ser único. |
-| `activo` | `true` lo muestra en el sitio, `false` lo oculta sin borrarlo. |
-| `destacado` | El curso con `true` es el que se despliega completo (temario, instructor, fechas, precio) en la página. **Solo uno debe tenerlo.** |
-| `estado` | `"inscripciones-abiertas"` (etiqueta verde) o `"proximamente"` (etiqueta gris). |
-| `software` | Se muestra como etiqueta negra sobre la imagen. Ej: `PIX4Dfields`. |
-| `imagen` | Ruta relativa dentro de `assets/img/`. |
-| `resumen` | Texto de la tarjeta. Ideal: 150–200 caracteres. |
-| `modulos` | El temario en acordeón. Si está vacío `[]`, esa sección no aparece. |
-| `cohortes` | Las fechas. Si está vacío, se muestra "Por anunciar" con CTA de lead. |
-| `precio` | Ver [CONFIGURAR.md](CONFIGURAR.md#3-precio-en-pesos-chilenos--obligatorio-para-publicidad). |
-
----
-
-## Estructura de un módulo del temario
-
-```json
-{
-  "numero": 1,
-  "titulo": "Fundamentos y adquisición de datos",
-  "objetivo": "Qué logra el participante al terminar este módulo.",
-  "contenidos": [
-    "Primer tema",
-    "Segundo tema",
-    "Tercer tema"
-  ]
-}
-```
-
-El primer módulo aparece abierto por defecto; los demás, plegados.
-
----
-
-## Cambiar el curso destacado
-
-Cuando termine el workshop de Pix4Dfields y quieras destacar otro:
-
-1. En el curso actual: `"destacado": false`
-2. En el curso nuevo: `"destacado": true`
-
-La página completa (objetivo, temario, beneficios, instructor, fechas, precio, datos
-estructurados para Google) cambia sola.
-
----
-
-## Editar las preguntas frecuentes
-
-Al final del archivo, en `"faq"`. Cada entrada tiene `p` (pregunta) y `r` (respuesta):
-
-```json
-{ "p": "¿Entregan factura?", "r": "Sí, emitimos documento tributario." }
-```
-
-Estas preguntas también se envían a Google como datos estructurados, así que pueden
-aparecer directamente en los resultados de búsqueda.
-
----
-
-## Errores comunes
-
-**El sitio queda en blanco o dice "No se pudo cargar el contenido".**
-El archivo JSON tiene un error de sintaxis. Causas típicas:
-
-- Falta una coma entre dos cursos, o sobra una coma antes de `]` o `}`
-- Faltan comillas en un texto
-- Se usaron comillas curvas (`"` `"`) en vez de rectas (`"`) — pasa al copiar desde Word
-
-Pega el contenido en <https://jsonlint.com> y te dirá exactamente la línea del error.
-
-**Las tildes se ven raras (`Ã¡`).**
-El archivo debe guardarse en UTF-8. En el Bloc de notas: *Guardar como* → Codificación **UTF-8**.
-Editando desde GitHub esto nunca pasa.
+> Ojo con las comillas y las comas. Un error de sintaxis en este archivo no bota
+> los cursos —esos viven en el panel—, pero la página se queda sin preguntas
+> frecuentes y usa datos de contacto de respaldo hasta que se corrija. Si GitHub
+> marca una línea en rojo, algo quedó mal.

@@ -1,19 +1,24 @@
 /**
- * Panel comercial — /admin
+ * Panel comercial — la API.
  *
- * Una sola pagina, sin dependencias, para editar precios, fechas y links de
- * pago sin tocar codigo ni esperar un deploy. Guarda en Cloudflare KV; la
- * pagina publica lee lo mismo a traves de /api/cursos.
+ * La interfaz vive en admin/ como archivos estaticos (index.html, panel.css,
+ * panel.js). Que sean publicos no es un problema: no llevan ningun secreto, y
+ * todo lo que lee o escribe datos pasa por aqui, detras de la clave.
+ *
+ *   GET  /api/admin/datos   el catalogo completo, ocultos incluidos
+ *   POST /api/admin/datos   guarda el catalogo completo
+ *   POST /api/admin/media   sube una imagen
+ *   POST /api/admin/vista   entrega la cookie de vista previa
+ *   POST /api/admin/salir   la borra
  *
  * Entra con la clave del secreto ADMIN_CLAVE (Cloudflare -> Settings ->
  * Variables and Secrets, tipo Secret). Si el secreto no existe, el panel queda
  * cerrado a proposito: sin clave no hay entrada, no una entrada libre.
- *
- * El panel no esta enlazado desde ninguna parte del sitio y responde con
- * noindex, asi que no aparece en buscadores.
  */
 
-import { leerBase, leerCambios, guardarCambios, fusionar, limpiarCambios, hayKV, MEDIOS_PAGO } from './catalogo.js';
+import { leerBase, leerCatalogo, guardarCatalogo, limpiarCatalogo, hayKV, MEDIOS_PAGO } from './catalogo.js';
+import * as media from './media.js';
+import * as vista from './vista.js';
 
 /* ---------- Puerta ---------- */
 
@@ -33,24 +38,32 @@ function claveOk(env, recibida) {
   return d === 0;
 }
 
-function json(cuerpo, estado) {
-  return new Response(JSON.stringify(cuerpo), {
-    status: estado || 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'X-Robots-Tag': 'noindex, nofollow'
-    }
-  });
+function json(cuerpo, estado, extra) {
+  var h = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex, nofollow'
+  };
+  Object.assign(h, extra || {});
+  return new Response(JSON.stringify(cuerpo), { status: estado || 200, headers: h });
+}
+
+/* ---------- Interfaz ---------- */
+
+export async function pagina(request, env) {
+  var r = await env.ASSETS.fetch(new Request(new URL('/admin/', request.url).toString()));
+  var h = new Headers(r.headers);
+  h.set('Cache-Control', 'no-store');
+  h.set('X-Robots-Tag', 'noindex, nofollow');
+  return new Response(r.body, { status: r.status, headers: h });
 }
 
 /* ---------- API ---------- */
 
-export async function api(request, env) {
+export async function api(request, env, ruta) {
   if (!env.ADMIN_CLAVE) {
     // Mientras el panel no tenga clave, esta respuesta hace de diagnostico:
-    // dice si el almacen quedo enlazado, que de otro modo no hay forma de
-    // comprobar desde afuera. No revela nada: sin clave no se entra igual.
+    // dice si el almacen quedo enlazado. No revela nada: sin clave no se entra.
     return json({ ok: false, error: 'sin_clave_configurada', kv: hayKV(env) }, 503);
   }
   if (!claveOk(env, request.headers.get('X-Clave'))) {
@@ -58,500 +71,76 @@ export async function api(request, env) {
     await new Promise(function (r) { setTimeout(r, 600); });
     return json({ ok: false, error: 'clave_incorrecta' }, 401);
   }
+  if (request.method !== 'GET' && request.method !== 'POST') {
+    return json({ ok: false, error: 'metodo_no_permitido' }, 405);
+  }
 
-  var base = await leerBase(env);
-  var ids = (base.cursos || []).map(function (c) { return c.id; });
+  if (ruta === 'vista' && request.method === 'POST') {
+    return json({ ok: true }, 200, { 'Set-Cookie': await vista.emitir(env) });
+  }
+  if (ruta === 'salir' && request.method === 'POST') {
+    return json({ ok: true }, 200, { 'Set-Cookie': vista.borrar() });
+  }
 
-  if (request.method === 'GET') {
-    var datos = fusionar(base, await leerCambios(env));
+  if (ruta === 'media' && request.method === 'POST') {
+    if (!hayKV(env)) return json({ ok: false, error: 'falta_kv' }, 503);
+    var subida = await media.subir(request, env);
+    return json(subida, subida.ok ? 200 : subida.http);
+  }
+
+  if (ruta === 'datos' && request.method === 'GET') {
+    var cat = await leerCatalogo(env);
+    var base = await leerBase(env);
     return json({
       ok: true,
       kv: hayKV(env),
       // El panel dibuja una casilla por medio habilitado. Asi apagar uno es
       // cambiar una lista en catalogo.js, sin tocar la interfaz.
       medios: MEDIOS_PAGO,
-      actualizado: datos.actualizado,
-      cursos: (datos.cursos || []).map(function (c) {
-        return {
-          id: c.id,
-          titulo: c.titulo,
-          software: c.software,
-          observaciones: c.observaciones || '',
-          estado: c.estado,
-          precio: c.precio || {},
-          pagos: c.pagos || {},
-          cohortes: c.cohortes || []
-        };
-      })
+      actualizado: cat.actualizado,
+      cursos: cat.cursos,
+      instructores: cat.instructores,
+      // Imagenes que vienen con el sitio, para poder elegirlas sin subirlas.
+      imagenesSitio: (base.imagenes_sitio || [])
     });
   }
 
-  if (request.method === 'POST') {
+  if (ruta === 'datos' && request.method === 'POST') {
     var entrada;
     try { entrada = await request.json(); }
     catch (e) { return json({ ok: false, error: 'json_invalido' }, 400); }
 
-    var limpio = limpiarCambios(entrada, ids);
+    var limpio = limpiarCatalogo(entrada);
+    if (!limpio.ok) return json({ ok: false, error: 'datos_invalidos', errores: limpio.errores }, 422);
 
     if (!hayKV(env)) {
-      // Sin KV no hay donde guardar, pero el trabajo no se pierde: se devuelve
-      // ya validado para poder pegarlo cuando el almacen este configurado.
-      return json({ ok: false, error: 'falta_kv', cambios: limpio }, 503);
+      return json({ ok: false, error: 'falta_kv' }, 503);
     }
 
-    await guardarCambios(env, limpio);
-    return json({ ok: true, actualizado: limpio.actualizado, cambios: limpio });
+    /*
+     * Guardado con dos pestanas abiertas: si el catalogo cambio desde que este
+     * panel lo cargo, no se pisa. Se avisa y la persona recarga. Sin esto, la
+     * pestana olvidada del lunes borraria en silencio lo que se hizo el martes.
+     */
+    var actual = await leerCatalogo(env);
+    if (actual.actualizado && entrada.base !== actual.actualizado) {
+      return json({ ok: false, error: 'conflicto', actualizado: actual.actualizado }, 409);
+    }
+
+    await guardarCatalogo(env, limpio.catalogo);
+
+    var borradas = 0;
+    try { borradas = await media.limpiarHuerfanas(env, limpio.catalogo); }
+    catch (e) { /* limpiar es mantencion; si falla, el guardado ya esta hecho */ }
+
+    return json({
+      ok: true,
+      actualizado: limpio.catalogo.actualizado,
+      cursos: limpio.catalogo.cursos,
+      instructores: limpio.catalogo.instructores,
+      imagenesBorradas: borradas
+    });
   }
 
-  return json({ ok: false, error: 'metodo_no_permitido' }, 405);
+  return json({ ok: false, error: 'no_encontrado' }, 404);
 }
-
-/* ---------- Pagina ---------- */
-
-export function pagina() {
-  return new Response(HTML, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'X-Robots-Tag': 'noindex, nofollow'
-    }
-  });
-}
-
-var HTML = `<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
-<title>Panel comercial · CoatzaDrone Chile</title>
-<style>
-  :root {
-    --rojo:#DD3330; --negro:#0E0E10; --carbon:#17171A; --linea:#2A2A30;
-    --texto:#EDEDEF; --gris:#9A9AA5; --ok:#3FB950;
-    color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin:0; background:var(--negro); color:var(--texto);
-    font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
-    padding: env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
-  }
-  .barra {
-    position:sticky; top:0; z-index:9; background:rgba(14,14,16,.94);
-    backdrop-filter:blur(8px); border-bottom:1px solid var(--linea);
-    padding:14px 20px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;
-  }
-  .barra h1 { margin:0; font-size:1rem; font-weight:600; letter-spacing:.02em; }
-  .barra h1 span { color:var(--rojo); }
-  .barra .sep { flex:1 1 auto; }
-  .env { max-width:980px; margin:0 auto; padding:26px 20px 90px; }
-  .curso {
-    background:var(--carbon); border:1px solid var(--linea); border-radius:12px;
-    padding:20px; margin-bottom:20px;
-  }
-  .curso > header { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
-  /* El nombre se edita donde se lee. Parece un titulo hasta que lo tocas: sin
-     un campo aparte que obligue a mirar en dos lados para el mismo dato. */
-  .titulo-input {
-    flex:1 1 260px; width:auto; font-size:1.05rem; font-weight:600;
-    background:transparent; border-color:transparent; padding:7px 10px; margin-left:-10px;
-  }
-  .titulo-input:hover { border-color:var(--linea); background:#0A0A0C; }
-  .titulo-input:focus { background:#0A0A0C; }
-  .tag {
-    font-size:.68rem; text-transform:uppercase; letter-spacing:.09em;
-    color:var(--gris); border:1px solid var(--linea); border-radius:99px; padding:3px 10px;
-  }
-  h3 {
-    font-size:.72rem; text-transform:uppercase; letter-spacing:.12em;
-    color:var(--gris); margin:24px 0 10px; font-weight:600;
-  }
-  .rej { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
-  .rej--compacta { grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px; }
-  .pista { color:var(--gris); font-size:.76rem; margin:6px 0 0; }
-  label { display:block; font-size:.74rem; color:var(--gris); margin-bottom:5px; }
-  input, select, textarea {
-    width:100%; background:#0A0A0C; color:var(--texto);
-    border:1px solid var(--linea); border-radius:7px; padding:9px 11px;
-    font:inherit; font-size:.92rem;
-  }
-  input:focus, select:focus, textarea:focus { outline:2px solid var(--rojo); outline-offset:1px; }
-  .fecha {
-    border:1px solid var(--linea); border-left:3px solid var(--rojo);
-    border-radius:9px; padding:14px 16px; margin-bottom:10px; background:#121215;
-  }
-  .fecha__top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .fecha__top strong { font-size:.8rem; color:var(--gris); text-transform:uppercase; letter-spacing:.09em; }
-  .fecha .rej + .rej { margin-top:10px; }
-  button {
-    font:inherit; cursor:pointer; border-radius:7px; border:1px solid var(--linea);
-    background:#1F1F24; color:var(--texto); padding:9px 16px;
-  }
-  button:hover { border-color:var(--gris); }
-  .btn-rojo { background:var(--rojo); border-color:var(--rojo); color:#fff; font-weight:600; }
-  .btn-mini { padding:5px 11px; font-size:.78rem; }
-  .btn-borrar { color:#FF7B77; border-color:#4A2422; background:transparent; }
-  .aviso {
-    border-radius:9px; padding:13px 16px; margin-bottom:20px; font-size:.9rem;
-    border:1px solid var(--linea); background:var(--carbon);
-  }
-  .aviso--mal { border-color:#5A2422; background:#2A1514; }
-  .aviso--bien { border-color:#1E4227; background:#13251A; }
-  .puerta { max-width:400px; margin:14vh auto; padding:0 20px; text-align:center; }
-  .puerta p { color:var(--gris); font-size:.9rem; }
-  .pie {
-    position:fixed; bottom:0; left:0; right:0; background:rgba(14,14,16,.96);
-    backdrop-filter:blur(8px); border-top:1px solid var(--linea);
-    padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));
-    display:flex; gap:14px; align-items:center; justify-content:flex-end;
-  }
-  .pie small { color:var(--gris); margin-right:auto; font-size:.8rem; }
-  #json { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.78rem; min-height:170px; }
-  .obs { min-height:60px; resize:vertical; line-height:1.45; }
-  [hidden] { display:none !important; }
-  @media (max-width:560px) { .pie { flex-wrap:wrap; } .pie small { width:100%; margin-bottom:4px; } }
-</style>
-</head>
-<body>
-
-<div id="puerta" class="puerta">
-  <h1 style="font-size:1.1rem">Panel comercial</h1>
-  <p>Precios, fechas y links de pago de <strong>coatzadrone.cl</strong></p>
-  <form id="formClave" style="margin-top:22px">
-    <label for="clave" style="text-align:left">Clave de acceso</label>
-    <input id="clave" type="password" autocomplete="current-password" required>
-    <button class="btn-rojo" style="width:100%;margin-top:12px;padding:11px">Entrar</button>
-  </form>
-  <div id="puertaError" class="aviso aviso--mal" hidden style="margin-top:16px;text-align:left"></div>
-</div>
-
-<div id="app" hidden>
-  <div class="barra">
-    <h1>Panel <span>comercial</span></h1>
-    <span class="tag" id="sello">—</span>
-    <span class="sep"></span>
-    <button class="btn-mini" id="recargar">Recargar</button>
-    <button class="btn-mini" id="salir">Salir</button>
-  </div>
-
-  <div class="env">
-    <div id="avisoKV" class="aviso aviso--mal" hidden></div>
-    <div id="cursos"></div>
-
-    <details id="cajaJson" style="margin-top:26px">
-      <summary style="cursor:pointer;color:var(--gris);font-size:.85rem">Ver los datos en crudo</summary>
-      <textarea id="json" readonly style="margin-top:12px"></textarea>
-    </details>
-  </div>
-
-  <div class="pie">
-    <small id="estado">Los cambios se publican al guardar.</small>
-    <button class="btn-rojo" id="guardar">Guardar y publicar</button>
-  </div>
-</div>
-
-<script>
-(function () {
-  'use strict';
-  var $ = function (s, c) { return (c || document).querySelector(s); };
-  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
-
-  var API = '/api/admin/datos';
-  var clave = sessionStorage.getItem('cd_admin') || '';
-  var DATOS = null;
-
-  var ESTADOS_CURSO = [
-    ['inscripciones-abiertas', 'Inscripciones abiertas'],
-    ['proximamente', 'Próximamente'],
-    ['cerrado', 'Cerrado']
-  ];
-  var ESTADOS_FECHA = [
-    ['abierta', 'Abierta'],
-    ['ultimos-cupos', 'Últimos cupos'],
-    ['agotada', 'Agotada'],
-    ['cerrado', 'Oculta']
-  ];
-
-  // Medios de pago: qué casilla dibujar y de qué campo sale. Los habilitados
-  // los manda el servidor, para que apagar uno no obligue a tocar esto.
-  var MEDIOS = ['flow'];
-  var MEDIO_NOMBRE = {
-    flow: 'Link de pago (Flow / Webpay)',
-    mercadopago: 'Link de Mercado Pago',
-    paypal: 'Link de PayPal'
-  };
-  var MEDIO_CLASE = { flow: 'fl', mercadopago: 'mp', paypal: 'pp' };
-  var MEDIO_CAMPO = { flow: 'flow_url', mercadopago: 'mercadopago_url', paypal: 'paypal_url' };
-
-  function esc(t) {
-    return String(t == null ? '' : t)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function campo(etiqueta, clase, valor, tipo, extra) {
-    return '<div><label>' + esc(etiqueta) + '</label>' +
-      '<input class="' + clase + '" type="' + (tipo || 'text') + '" ' +
-      (extra || '') + ' value="' + esc(valor == null ? '' : valor) + '"></div>';
-  }
-
-  function selector(etiqueta, clase, valor, opciones) {
-    return '<div><label>' + esc(etiqueta) + '</label><select class="' + clase + '">' +
-      opciones.map(function (o) {
-        return '<option value="' + esc(o[0]) + '"' +
-          (o[0] === valor ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
-      }).join('') + '</select></div>';
-  }
-
-  function area(etiqueta, clase, valor, pista) {
-    return '<div style="margin-top:12px"><label>' + esc(etiqueta) + '</label>' +
-      '<textarea class="obs ' + clase + '" rows="2" placeholder="' + esc(pista || '') + '">' +
-      esc(valor || '') + '</textarea></div>';
-  }
-
-  function camposPago(p, clase) {
-    p = p || {};
-    return MEDIOS.map(function (m) {
-      return campo(MEDIO_NOMBRE[m] || m, clase + ' ' + MEDIO_CLASE[m],
-        p[MEDIO_CAMPO[m]], 'url', 'placeholder="https://..."');
-    }).join('');
-  }
-
-  /**
-   * Una edición en una sola tarjeta, sin subtítulos ni secciones anidadas.
-   * Todo lo que define esa fecha se ve y se edita de una pasada.
-   */
-  function bloqueFecha(ch, i) {
-    ch = ch || {};
-    var p = ch.precio || {};
-    return '<div class="fecha" data-fecha>' +
-      '<div class="fecha__top">' +
-        '<strong>Edición ' + (i + 1) + '</strong>' +
-        '<button type="button" class="btn-mini btn-borrar" data-quitar>Eliminar</button>' +
-      '</div>' +
-      '<div class="rej rej--compacta">' +
-        campo('Desde', 'f-ini', ch.inicio, 'date') +
-        campo('Hasta', 'f-fin', ch.fin, 'date') +
-        campo('Horario', 'f-hor', ch.horario, 'text', 'placeholder="18:00 a 22:00"') +
-        campo('Cupos', 'f-ct', ch.cupos_totales, 'number', 'min="0" placeholder="12"') +
-        campo('Disponibles', 'f-cd', ch.cupos_disponibles, 'number', 'min="0"') +
-        selector('Estado', 'f-est', ch.estado || 'abierta', ESTADOS_FECHA) +
-      '</div>' +
-      '<div class="rej rej--compacta">' +
-        campo('Valor', 'f-p clp', p.clp, 'number', 'min="0" step="1000" placeholder="el general"') +
-        campo('Preventa', 'f-p ear', p.clp_early, 'number', 'min="0" step="1000"') +
-        campo('Preventa hasta', 'f-p eah', p.early_hasta, 'date') +
-        camposPago(ch.pagos, 'f-g') +
-      '</div>' +
-      area('Observaciones de esta fecha', 'f-obs', ch.observaciones,
-           'Ej: cupos limitados · incluye licencia por 30 días') +
-      '<p class="pista">Lo que dejes vacío hereda el valor general del curso.</p>' +
-      '</div>';
-  }
-
-  function pintar() {
-    $('#sello').textContent = DATOS.actualizado
-      ? 'Publicado ' + new Date(DATOS.actualizado).toLocaleString('es-CL')
-      : 'Sin cambios publicados';
-
-    if (!DATOS.kv) {
-      $('#avisoKV').hidden = false;
-      $('#avisoKV').innerHTML = '<strong>Falta el almacén.</strong> Todavía no está creado el ' +
-        'espacio donde se guardan estos datos, así que el botón de guardar no va a funcionar. ' +
-        'Puedes editar igual y copiar el resultado desde «Ver los datos en crudo».';
-    }
-
-    $('#cursos').innerHTML = DATOS.cursos.map(function (c) {
-      var p = c.precio || {};
-      return '<section class="curso" data-curso="' + esc(c.id) + '">' +
-        '<header>' +
-          '<input class="c-tit titulo-input" aria-label="Nombre del curso" ' +
-            'value="' + esc(c.titulo) + '">' +
-          '<span class="tag">' + esc(c.software) + '</span>' +
-        '</header>' +
-        '<h3>Valores por defecto</h3>' +
-        '<div class="rej rej--compacta">' +
-          selector('Estado', 'c-est', c.estado, ESTADOS_CURSO) +
-          // El marcador dice lo que sale en la pagina si se deja vacio, no un
-          // monto de ejemplo: un numero en gris ahi se lee como precio puesto.
-          campo('Valor', 'c-p clp', p.clp, 'number', 'min="0" step="1000" placeholder="Consultar"') +
-          campo('Preventa', 'c-p ear', p.clp_early, 'number', 'min="0" step="1000"') +
-          campo('Preventa hasta', 'c-p eah', p.early_hasta, 'date') +
-          camposPago(c.pagos, 'c-g') +
-        '</div>' +
-        area('Observaciones del curso', 'c-obs', c.observaciones,
-             'Se muestra junto al valor en la página. Ej: incluye factura · descuentos para equipos') +
-        '<h3>Fechas a la venta</h3>' +
-        '<div data-fechas>' + (c.cohortes || []).map(bloqueFecha).join('') + '</div>' +
-        '<button type="button" class="btn-mini" data-agregar>+ Agregar una fecha</button>' +
-        '</section>';
-    }).join('');
-
-    $$('[data-agregar]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var cont = $('[data-fechas]', b.closest('[data-curso]'));
-        cont.insertAdjacentHTML('beforeend', bloqueFecha({}, cont.children.length));
-        conectarBorrar();
-        // El cursor queda en el primer día de la edición recién creada: se
-        // sigue escribiendo sin buscar dónde quedó.
-        var nueva = cont.lastElementChild;
-        nueva.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        $('.f-ini', nueva).focus();
-      });
-    });
-    conectarBorrar();
-    volcarJson();
-  }
-
-  function conectarBorrar() {
-    $$('[data-quitar]').forEach(function (b) {
-      b.onclick = function () {
-        if (confirm('¿Eliminar esta fecha? Deja de aparecer en la página al guardar.')) {
-          b.closest('[data-fecha]').remove();
-          volcarJson();
-        }
-      };
-    });
-  }
-
-  function val(sel, cont) { var e = $(sel, cont); return e ? e.value.trim() : ''; }
-  function num(sel, cont) { var v = val(sel, cont); return v === '' ? null : parseInt(v, 10); }
-
-  function leerPrecio(cont, pre) {
-    return {
-      clp: num('.' + pre + '.clp', cont),
-      clp_early: num('.' + pre + '.ear', cont),
-      early_hasta: val('.' + pre + '.eah', cont) || null,
-      nota: ''
-    };
-  }
-
-  function leerPagos(cont, pre) {
-    var p = { mercadopago_url: '', flow_url: '', paypal_url: '', transferencia: true };
-    MEDIOS.forEach(function (m) {
-      p[MEDIO_CAMPO[m]] = val('.' + pre + '.' + MEDIO_CLASE[m], cont);
-    });
-    return p;
-  }
-
-  function recolectar() {
-    var cursos = {};
-    $$('[data-curso]').forEach(function (sec) {
-      cursos[sec.getAttribute('data-curso')] = {
-        titulo: val('.c-tit', sec),
-        observaciones: val('.c-obs', sec),
-        estado: val('.c-est', sec),
-        precio: leerPrecio(sec, 'c-p'),
-        pagos: leerPagos(sec, 'c-g'),
-        cohortes: $$('[data-fecha]', sec).map(function (f, i) {
-          return {
-            id: 'ed-' + (val('.f-ini', f) || String(i + 1)).replace(/-/g, '').slice(0, 8),
-            inicio: val('.f-ini', f),
-            fin: val('.f-fin', f),
-            horario: val('.f-hor', f),
-            sesiones: [],
-            cupos_totales: num('.f-ct', f),
-            cupos_disponibles: num('.f-cd', f),
-            estado: val('.f-est', f),
-            confirmada: true,
-            observaciones: val('.f-obs', f),
-            precio: leerPrecio(f, 'f-p'),
-            pagos: leerPagos(f, 'f-g')
-          };
-        })
-      };
-    });
-    return { cursos: cursos };
-  }
-
-  function volcarJson() {
-    $('#json').value = JSON.stringify(recolectar(), null, 2);
-  }
-
-  function decir(msg, malo) {
-    var e = $('#estado');
-    e.textContent = msg;
-    e.style.color = malo ? '#FF7B77' : 'var(--ok)';
-    if (!malo) setTimeout(function () { e.style.color = ''; }, 6000);
-  }
-
-  function pedir(metodo, cuerpo) {
-    return fetch(API, {
-      method: metodo,
-      headers: { 'X-Clave': clave, 'Content-Type': 'application/json' },
-      body: cuerpo ? JSON.stringify(cuerpo) : undefined
-    }).then(function (r) {
-      return r.json().then(function (j) { return { http: r.status, datos: j }; });
-    });
-  }
-
-  function cargar() {
-    return pedir('GET').then(function (r) {
-      if (!r.datos.ok) throw r.datos;
-      DATOS = r.datos;
-      if (Array.isArray(DATOS.medios) && DATOS.medios.length) MEDIOS = DATOS.medios;
-      $('#puerta').hidden = true;
-      $('#app').hidden = false;
-      pintar();
-    });
-  }
-
-  $('#formClave').addEventListener('submit', function (e) {
-    e.preventDefault();
-    clave = $('#clave').value;
-    cargar().then(function () {
-      sessionStorage.setItem('cd_admin', clave);
-    }).catch(function (err) {
-      var caja = $('#puertaError');
-      caja.hidden = false;
-      caja.textContent = err && err.error === 'sin_clave_configurada'
-        ? 'El panel todavía no tiene clave configurada en Cloudflare. Mientras no exista, nadie puede entrar.'
-        : 'Clave incorrecta.';
-    });
-  });
-
-  $('#recargar').addEventListener('click', function () {
-    cargar().then(function () { decir('Recargado desde el servidor.'); });
-  });
-
-  $('#salir').addEventListener('click', function () {
-    sessionStorage.removeItem('cd_admin');
-    location.reload();
-  });
-
-  $('#guardar').addEventListener('click', function () {
-    volcarJson();
-    decir('Guardando…');
-    pedir('POST', recolectar()).then(function (r) {
-      if (r.datos.ok) {
-        DATOS.actualizado = r.datos.actualizado;
-        $('#sello').textContent = 'Publicado ' + new Date(r.datos.actualizado).toLocaleString('es-CL');
-        decir('Listo. Ya está publicado en la página.');
-      } else if (r.datos.error === 'falta_kv') {
-        decir('Falta crear el almacén en Cloudflare. Los datos quedaron abajo para copiarlos.', true);
-        $('#cajaJson').open = true;
-        $('#json').value = JSON.stringify(r.datos.cambios, null, 2);
-      } else {
-        decir('No se pudo guardar: ' + (r.datos.error || r.http), true);
-      }
-    }).catch(function () {
-      decir('No se pudo conectar con el servidor.', true);
-    });
-  });
-
-  document.addEventListener('input', function (e) {
-    if ($('#app').hidden) return;
-    if (e.target.closest('#cursos')) volcarJson();
-  });
-
-  if (clave) {
-    cargar().catch(function () {
-      sessionStorage.removeItem('cd_admin');
-      clave = '';
-    });
-  }
-})();
-</script>
-</body>
-</html>`;

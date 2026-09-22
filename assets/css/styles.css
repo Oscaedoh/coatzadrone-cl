@@ -954,3 +954,279 @@ body.con-banner .wa-flotante { display: none; }
 }
 
 .cohorte__obs { display: block; margin-top: 6px; color: var(--hueso); white-space: pre-line; }
+
+/* ==========================================================================
+   Catálogo por curso — portada + landing de cada curso
+   ========================================================================== */
+
+/* ---------- Menú "Cursos" desplegable ---------- */
+.nav__grupo { position: relative; }
+.nav__boton {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--gris);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  transition: color var(--transicion);
+}
+.nav__boton::after {
+  content: "";
+  width: 6px; height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--transicion);
+}
+.nav__boton:hover, .nav__grupo.abierto .nav__boton { color: var(--blanco); }
+.nav__grupo.abierto .nav__boton::after { transform: translateY(1px) rotate(-135deg); }
+
+.nav__menu {
+  position: absolute;
+  top: calc(100% + 20px);
+  left: -16px;
+  width: 360px;
+  background: rgba(13,13,13,.98);
+  border: 1px solid var(--borde);
+  border-top: 2px solid var(--rojo);
+  border-radius: var(--radio-lg);
+  padding: 8px;
+  box-shadow: 0 20px 44px rgba(0,0,0,.55);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity var(--transicion), transform var(--transicion), visibility var(--transicion);
+}
+/* Puente invisible sobre el hueco entre el botón y el menú: sin esto, el
+   menú se cierra al pasar el mouse de uno al otro. */
+.nav__menu::before { content: ""; position: absolute; left: 0; right: 0; top: -22px; height: 22px; }
+.nav__grupo.abierto .nav__menu { opacity: 1; visibility: visible; transform: none; }
+@media (hover: hover) and (min-width: 821px) {
+  .nav__grupo:hover .nav__menu,
+  .nav__grupo:focus-within .nav__menu { opacity: 1; visibility: visible; transform: none; }
+}
+.nav .nav__menu a {
+  display: block;
+  padding: 11px 12px;
+  border-radius: var(--radio);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: .95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--blanco);
+}
+.nav .nav__menu a::after { display: none; }
+.nav .nav__menu a:hover, .nav .nav__menu a[aria-current="page"] { background: var(--grafito); }
+.nav__soft {
+  display: block;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--rojo);
+  margin-bottom: 2px;
+}
+.nav .nav__menu .nav__todos {
+  border-top: 1px solid var(--borde);
+  border-radius: 0 0 var(--radio) var(--radio);
+  margin-top: 6px;
+  padding-top: 13px;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+.nav .nav__menu .nav__todos:hover { color: var(--blanco); background: none; }
+
+/* ---------- Portada de un curso ---------- */
+.hero--curso {
+  min-height: auto;
+  padding-top: calc(var(--header-h) + 76px);
+  padding-bottom: 76px;
+}
+.hero--curso h1 { font-size: clamp(2.4rem, 5.6vw, 4.2rem); line-height: .95; }
+
+.hechos {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hechos li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--radio);
+  padding: 9px 14px;
+}
+.hechos span {
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+.hechos strong { font-size: .95rem; font-weight: 600; }
+
+/* La misma lista, en filas: para el resumen del próximo workshop. */
+.hechos--lista { flex-direction: column; gap: 0; margin: 26px 0 28px; }
+.hechos--lista li {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  border-radius: 0;
+  padding: 12px 0;
+}
+.hechos--lista li:first-child { border-top: 1px solid var(--borde); }
+.hechos--lista strong { text-align: right; }
+
+.hero__compra { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 30px; }
+.hero__compra .hero__acciones { margin: 0; }
+.hero__precio span {
+  display: block;
+  font-family: var(--display);
+  font-size: 2.7rem;
+  line-height: 1;
+}
+.hero__precio small {
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+
+.destacado__resumen { color: var(--gris); font-size: 1.06rem; }
+.texto-largo p { color: var(--gris); }
+
+/* ---------- Tarjetas de curso ---------- */
+a.curso-card__media { display: block; }
+.curso-card h3 a { transition: color var(--transicion); }
+.curso-card h3 a:hover { color: var(--rojo); }
+.curso-card__ver {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gris);
+  transition: color var(--transicion);
+}
+.curso-card__ver:hover { color: var(--blanco); }
+
+.precio-caja__seguro { font-size: .8rem; color: var(--gris); text-align: center; margin: 10px 0 0; }
+
+/* ---------- Calendario: un bloque por curso ---------- */
+.calendario { display: grid; gap: 44px; }
+.cal-curso__cab {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+.cal-curso__soft {
+  width: 100%;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rojo);
+}
+.cal-curso__cab h3 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 1.8rem); }
+.cal-curso__cab h3 a { transition: color var(--transicion); }
+.cal-curso__cab h3 a:hover { color: var(--rojo); }
+.cal-curso__ver {
+  margin-left: auto;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gris);
+  white-space: nowrap;
+}
+.cal-curso__ver:hover { color: var(--blanco); }
+.cohorte--anunciar .cohorte__fecha { color: var(--gris); }
+.cohorte__referencial {
+  font-family: var(--texto);
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gris);
+  margin-top: 6px;
+}
+
+/* ---------- Instructores ---------- */
+.instructores { display: grid; gap: 64px; }
+.instructor__bio p { margin: 0 0 12px; }
+.instructor__enlaces { display: flex; flex-wrap: wrap; gap: 6px 24px; }
+
+/* ---------- Barra de compra (solo celular) ---------- */
+.barra-compra { display: none; }
+
+@media (max-width: 820px) {
+  .nav__grupo { border-bottom: 1px solid var(--borde); }
+  .nav__boton { width: 100%; justify-content: space-between; padding: 15px 0; font-size: .9rem; }
+  .nav__menu {
+    position: static;
+    width: auto;
+    display: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding: 0 0 12px;
+  }
+  .nav__menu::before { display: none; }
+  .nav__grupo.abierto .nav__menu { display: block; }
+  .nav .nav__menu a { padding: 10px 12px; border-bottom: 0; }
+
+  .barra-compra {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 90;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: rgba(13,13,13,.97);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--borde);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(110%);
+    transition: transform var(--transicion);
+  }
+  .barra-compra.visible { transform: none; }
+  .barra-compra__precio strong { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+  .barra-compra__precio small { color: var(--gris); font-size: .78rem; }
+  .barra-compra .btn { padding: 13px 20px; font-size: .72rem; flex: none; }
+  body.con-barra .wa-flotante { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+
+  .hero--curso { padding-top: calc(var(--header-h) + 44px); padding-bottom: 52px; }
+  .cal-curso__ver { margin-left: 0; }
+}
+
+@media (max-width: 640px) {
+  .hero__compra .hero__acciones .btn { width: 100%; }
+  .hero__precio span { font-size: 2.3rem; }
+  .hechos li { padding: 8px 12px; }
+}

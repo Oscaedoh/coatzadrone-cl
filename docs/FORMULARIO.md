@@ -62,11 +62,14 @@ El sitio guarda el origen apenas carga la página y lo manda junto con el
 formulario. No hay que hacer nada para que funcione, pero sí hay que **etiquetar
 los anuncios** para que sirva de algo.
 
-Un anuncio de Instagram debería apuntar a una URL así:
+Un anuncio de Instagram debería apuntar a la **página del curso** que promociona,
+no a la portada:
 
 ```
-https://coatzadrone.cl/?utm_source=meta&utm_medium=cpc&utm_campaign=pix4dfields-octubre
+https://coatzadrone.cl/cursos/pix4dfields-agricultura-precision?utm_source=meta&utm_medium=cpc&utm_campaign=pix4dfields-octubre
 ```
+
+La dirección de cada curso está en su ficha del panel, en *Dirección de la página*.
 
 Con eso, el contacto entra a Brevo con `ORIGEN = meta / cpc` y
 `CAMPANA = pix4dfields-octubre`, y puedes ver qué campaña trajo qué inscripción.
@@ -164,16 +167,24 @@ Hay tres caminos según qué tan decidida viene la persona:
 
 | Intención | Camino | Dónde cae | Qué correo recibe |
 |---|---|---|---|
-| "Lo compro" | Botones de pago → checkout | (pendiente) | el del medio de pago |
+| "Lo compro" | Botones de pago → checkout de Flow | Flow | el del medio de pago |
 | "Cuéntenme más" | Formulario | `Leads - Cursos Pix4D` | bienvenida + aviso interno |
 | "Solo avísenme" | Banner del pie | lista de novedades | confirmación corta |
 
 ### El botón de pago
 
-Aparece solo cuando `data/cursos.json` tiene links en `pagos`. Al aparecer, el CTA
-de contacto se degrada automáticamente a *"Prefiero que me contacten"* en estilo
-secundario, para que comprar sea el camino evidente. Sin links, todo vuelve al
-comportamiento anterior. No hay que tocar código.
+Aparece solo cuando el curso tiene un link de pago cargado en el panel y sus
+inscripciones están abiertas. Al aparecer, el botón de contacto pasa a *"Prefiero
+que me contacten"* en estilo secundario, para que comprar sea el camino evidente.
+Sin link, todos los botones llevan al formulario. Ver [PANEL.md](PANEL.md).
+
+### En la landing de cada curso
+
+Cada curso tiene su página, `coatzadrone.cl/cursos/<curso>`, que es a donde
+deben apuntar los anuncios. Ahí el formulario ya viene con el curso elegido, y en
+celular aparece una barra fija con el precio y el botón de pago apenas se deja
+atrás la portada del curso. El banner de novedades no aparece en esas páginas:
+competiría con esa barra, y quien llega desde un anuncio ya tiene un camino claro.
 
 ### El banner de novedades
 

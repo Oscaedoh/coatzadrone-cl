@@ -1,7 +1,10 @@
 # Datos que faltan antes de salir al aire
 
-Todo se edita en **un solo archivo**: `data/cursos.json`.
-Ábrelo con el Bloc de notas, VS Code o directamente en GitHub desde el navegador.
+Los **cursos, fechas, precios, links de pago e instructores** se editan en el panel
+<https://coatzadrone.cl/admin> — ver [PANEL.md](PANEL.md).
+
+Lo que sigue en `data/cursos.json` es poco y cambia rara vez: los datos de
+contacto, los ids de analítica (`config`) y las preguntas frecuentes (`faq`).
 
 ## Estado al 21 de septiembre de 2026
 

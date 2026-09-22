@@ -28,11 +28,11 @@ comunicación.
 
 ## Qué es este repositorio
 
-La landing de **cursos y workshops Pix4D** para `coatzadrone.cl`. Primera pieza del
+El sitio de **cursos y workshops Pix4D** para `coatzadrone.cl`. Primera pieza del
 plan: partir ofreciendo capacitación con fuerza y desde ahí traer leads.
 
-Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja desde
-`data/cursos.json`.
+Sin build: HTML + CSS + JS plano, servido por un Worker de Cloudflare. Los cursos
+y los instructores se administran en el panel `/admin` y se guardan en KV.
 
 ## Decisiones tomadas
 
@@ -42,7 +42,8 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 | Repositorio | GitHub, deploy automático por push | Sin costo, con historial y rollback |
 | Pagos | **Flow.cl** (Mercado Pago en pausa) | Reconocido en Chile y cubre Webpay; link de pago sin backend. El soporte de Mercado Pago sigue en el código, apagado en `MEDIOS_PAGO` |
 | Arquitectura | Estático, sin framework | No hay Node instalado en la máquina; cero mantención y cero costo |
-| Contenido | Un solo JSON | El dueño debe poder agregar cursos sin tocar código |
+| Contenido | Panel `/admin` + Cloudflare KV | El dueño agrega, edita y quita cursos como en una tienda, sin tocar código ni esperar deploy |
+| Páginas | Una landing por curso en `/cursos/<id>` | Destino de los anuncios de Meta; título, descripción e imagen propios al compartir |
 | Idioma | Solo español | Alcance definido para la primera entrega |
 
 ## Entorno de la máquina
@@ -60,12 +61,17 @@ gráfica de la marca, WhatsApp, correo y el enlace al directorio de Pix4D.
 
 - Responde **HTTP 503**, no 200. Es deliberado: le dice a Google que la caída es
   temporal. Un 200 arriesga que indexe el aviso como si fuera el sitio.
-- **No hay dominio de excepción.** El sitio está completamente fuera de línea.
-  Se revisa en local con `scripts/servidor-local.ps1` → <http://localhost:8899>,
-  que no expone nada a internet ni necesita DNS.
+- **No hay dominio de excepción.** El dueño ve el sitio real con la **vista
+  previa**: al entrar al panel recibe una cookie firmada con `ADMIN_CLAVE`
+  (`worker/vista.js`) que le deja navegar coatzadrone.cl por 8 horas, con una
+  etiqueta roja que lo recuerda. También abre cursos ocultos.
+- En local: `scripts/servidor-local.ps1` → <http://localhost:8899>. La página de
+  un curso es `index.html?curso=<id>`. Muestra el catálogo inicial del JSON, no el
+  de KV.
 - Las URLs `*.workers.dev` quedaron desactivadas en el panel: llevaban el nombre
   de la cuenta en la dirección.
-- `/api/lead` sigue funcionando en `coatzadrone.cl` pese al mantenimiento.
+- Siguen funcionando pese al mantenimiento: `/api/lead`, `/api/cursos`,
+  `/media/*`, `/admin` y `/api/admin/*`.
 
 **Para volver a publicarlo**, cualquiera de los dos:
 
@@ -95,27 +101,57 @@ Resuelto:
   `Leads - Cursos Pix4D` y `Alumnos`, 7 atributos propios y la secuencia de bienvenida
   de 5 plantillas
 
-## El catálogo: contenido vs. comercio — 22 de septiembre de 2026
+## El catálogo — 22 de septiembre de 2026
 
-Lo que se vende **no es el curso, es la edición**: una fecha concreta con su
-cupo, su precio y su propio link de pago. Un curso puede tener varias al año.
+Los cursos son **productos** que el dueño administra completos en `/admin`, como
+en una tienda: textos, imagen, temario, instructores, fechas, precio y link de
+pago. Los instructores son una lista aparte que los cursos referencian por id.
 
-Por eso el catálogo está partido en dos mitades con ritmos distintos:
+Lo que se **compra** no es el curso sino la **edición**: una fecha con su cupo,
+su precio y su link de pago. Lo comercial vive en cada cohorte y hereda lo del
+curso solo cuando la edición no lo define.
 
-| | Dónde vive | Cómo se cambia |
+Dónde vive cada cosa:
+
+| | Dónde | Cómo se cambia |
 |---|---|---|
-| Temario, instructor, textos, fotos | `data/cursos.json` | commit + push |
-| Precio, fechas, cupos, links de pago | Cloudflare KV | en `/admin`, al instante |
+| Cursos e instructores | KV, clave `catalogo` | panel `/admin` |
+| Imágenes subidas | KV, claves `media:<id>`, servidas en `/media/<id>` | panel |
+| `config` (contacto, analítica) y `faq` | `data/cursos.json` | commit + push |
+| Catálogo inicial de respaldo | `data/cursos.json` (`cursos`, `instructores`) | solo se usa si KV nunca se guardó o falla |
 
-`GET /api/cursos` entrega las dos unidas, con KV mandando por sobre el archivo.
-Si el panel nunca se usó o KV no está, sale el archivo tal cual: el sitio nunca
-depende de esto para funcionar. El sitio cae al archivo directo si el endpoint
-falla, que es también lo que pasa en `localhost:8899`, donde no hay Worker.
+- La clave vieja `comercio` (panel anterior) solo se lee para migrar, mientras
+  no exista `catalogo`. El primer guardado del panel nuevo la deja obsoleta.
+- Todo lo que entra por el panel se valida en `limpiarCatalogo()`. Imágenes: solo
+  `/media/...` o `assets/img/...`; subidas: el tipo se decide por los bytes, SVG
+  rechazado. Links: solo `https://`.
+- `MEDIOS_PAGO` en `worker/catalogo.js` decide qué pasarelas existen. Hoy solo
+  `flow`; los links de medios apagados se borran también **al leer**.
+- Cambiar la dirección de un curso guarda la vieja en `alias` y responde 301 a
+  la nueva, conservando los UTM de los anuncios.
+- Guardar con datos viejos (otra pestaña) responde 409 en vez de pisar.
+- Las imágenes huérfanas se borran al guardar, con 1 hora de gracia.
 
-El panel solo puede tocar el nombre, las observaciones, `estado`, `precio`,
-`pagos` y `cohortes`. Hoy el unico medio de pago habilitado es Flow: ver
-`MEDIOS_PAGO` en `worker/catalogo.js`. El contenido largo
-va por commit, con historial. Ver `docs/PANEL.md`.
+## Las páginas
+
+`index.html` es **una sola plantilla** para la portada (`/`) y la landing de cada
+curso (`/cursos/<id>`). Lo exclusivo de cada una lleva `data-solo="inicio"` o
+`data-solo="curso"`; `worker/paginas.js` quita lo que no corresponde con
+HTMLRewriter, reescribe título/descripción/og:image/canonical del curso (Meta y
+WhatsApp no ejecutan JS) e incrusta el catálogo en `<script id="catalogo-datos">`.
+
+- Portada: tarjetas de cursos, «Próximo workshop» elegido solo (fecha más
+  cercana con cupo; sin fechas, el primer curso del orden del panel),
+  calendario agrupado por curso, «Hablemos», preguntas.
+- Landing de curso: portada con precio y botón de pago sin bajar, «Sobre el
+  curso» con caja de precio, temario, por qué tomarlo, instructores, fechas,
+  requisitos, formulario con el curso elegido. En celular, barra fija de compra.
+  Sin banner de novedades.
+- Todas las rutas de assets son absolutas (`/assets/...`): la plantilla se sirve
+  también bajo `/cursos/`.
+- `/sitemap.xml` lo genera el Worker con los cursos publicados.
+
+Ver `docs/PANEL.md`.
 
 Pendiente — ver `docs/CONFIGURAR.md`:
 
@@ -123,12 +159,11 @@ Pendiente — ver `docs/CONFIGURAR.md`:
    `www` → raíz ya quedó creada y funcionando)
 2. ~~Cargar el secreto `BREVO_API_KEY`~~ — ✅ hecho, `/api/lead` operativo
 3. ~~Lista de novedades del banner~~ — ✅ hecha, es la id 7
-4. **Crear el secreto `ADMIN_CLAVE`** en Cloudflare (tipo *Secret*). Sin él el
-   panel `/admin` queda cerrado
+4. ~~Secreto `ADMIN_CLAVE`~~ — ✅ creado, el panel pide clave
 5. ~~Crear el almacén KV y conectarlo~~ — ✅ hecho, binding `CONFIG`
 6. Armar la automatización de los correos 2 al 5 en Brevo
-7. Link de pago: **Botón de Pago** en Flow. Ya no va al JSON — se pega en
-   `/admin`. Mercado Pago quedó en pausa por decisión del dueño
+7. Links de pago de Flow: ✅ Pix4Dfields tiene el suyo. Falta uno por cada curso
+   que se abra a la venta. Mercado Pago en pausa por decisión del dueño
 8. IDs de GA4 y Píxel de Meta, antes de pautar
 9. Fecha del primer curso, antes de abrir el cobro
 10. Borrar en Brevo el contacto de prueba id 6 y la plantilla rota id 3
@@ -149,3 +184,9 @@ Pendiente — ver `docs/CONFIGURAR.md`:
   fondos oscuros. No inventar colores ni tipografías nuevas.
 - Nunca publicar precios, fechas ni datos de contacto inventados: si el dato no
   está confirmado, el sitio debe degradar a "Consultar" o "Por confirmar"
+- **Sin escapes `\uXXXX` en el código fuente.** Las herramientas de edición los
+  convierten en el carácter real, y U+2028/U+2029 son saltos de línea que rompen
+  el JavaScript. Usar `String.fromCharCode(...)` o clases como `\p{M}` con la
+  bandera `u`
+- `index.html` es plantilla compartida: una sección nueva exclusiva de una página
+  lleva `data-solo`; si no, aparece en las dos

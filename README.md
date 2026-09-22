@@ -1,10 +1,21 @@
-# COATZADRONE CHILE — Landing de Cursos y Workshops Pix4D
+# COATZADRONE CHILE — Cursos y Workshops Pix4D
 
-Sitio estático para **coatzadrone.cl**, enfocado en captar inscripciones y leads para los
-cursos y workshops oficiales Pix4D que dicta CoatzaDrone Chile.
+Sitio de **coatzadrone.cl**: el catálogo de cursos y workshops oficiales Pix4D que
+dicta CoatzaDrone Chile, con una página por curso para vender y captar leads.
 
 CoatzaDrone figura como **Centro de Entrenamiento Oficial Pix4D para Chile** en el
 [directorio mundial de Pix4D](https://training.pix4d.com/pages/locate-a-pix4d-trusted-training-center).
+
+---
+
+## Cómo se administra
+
+**Los cursos se manejan desde el panel:** <https://coatzadrone.cl/admin>
+
+Ahí se crean, editan, ocultan y eliminan cursos con todo su contenido —textos,
+imagen, temario, instructores, fechas, precios y link de pago—, y se administran
+los instructores. Se publica al guardar, sin tocar código. Ver
+**[docs/PANEL.md](docs/PANEL.md)**.
 
 ---
 
@@ -12,56 +23,65 @@ CoatzaDrone figura como **Centro de Entrenamiento Oficial Pix4D para Chile** en 
 
 ```
 .
-├── index.html              Landing completa (una sola página)
-├── data/
-│   └── cursos.json         ← TODO el contenido vive acá. Agregar cursos = editar este archivo
+├── index.html              Plantilla única: la portada y la página de cada curso
+├── admin/                  El panel comercial (interfaz)
 ├── assets/
 │   ├── css/styles.css      Sistema de diseño (gráfica corporativa CoatzaDrone)
-│   ├── js/app.js           Render dinámico, formulario, calendario .ics, analítica
+│   ├── js/app.js           Arma las páginas con el catálogo, formularios, analítica
 │   └── img/                Logo, favicon e imágenes corporativas
-├── _headers                Cabeceras y caché para Cloudflare Pages
-├── robots.txt / sitemap.xml
-└── docs/                   Guías operativas (leer CONFIGURAR.md primero)
+├── data/cursos.json        Contacto, analítica y preguntas frecuentes, más el
+│                           catálogo inicial de respaldo
+├── worker/                 El servidor (Cloudflare Worker)
+│   ├── index.js            Rutas, mantenimiento y captación de leads (Brevo)
+│   ├── catalogo.js         El catálogo: lectura, validación y migración
+│   ├── paginas.js          Arma la portada y cada /cursos/<curso>, y el sitemap
+│   ├── admin.js            La API del panel
+│   ├── media.js            Imágenes subidas desde el panel
+│   └── vista.js            Vista previa para el dueño durante el mantenimiento
+├── wrangler.jsonc          Configuración del Worker y del almacén KV
+└── docs/                   Guías operativas
 ```
 
-**No hay build.** Es HTML, CSS y JavaScript plano. Se publica tal cual.
-Sin Node, sin dependencias, sin costos de mantención.
+**No hay build.** Es HTML, CSS y JavaScript plano. El Worker lo empaqueta
+Cloudflare al publicar.
 
 ---
 
-## Antes de publicar
+## Las páginas
 
-Lee **[docs/CONFIGURAR.md](docs/CONFIGURAR.md)**. Hay 7 datos que faltan (teléfono,
-precio en CLP, fechas confirmadas, endpoint del formulario, IDs de analítica y links
-de pago). Todos se editan en un solo archivo: `data/cursos.json`.
+| Dirección | Qué es |
+|---|---|
+| `/` | Portada: cursos, próximo workshop, calendario, contacto y preguntas |
+| `/cursos/<curso>` | Página de un curso. **Es a donde apuntan los anuncios** |
+| `/admin` | El panel comercial |
+
+Las dos primeras salen de la misma plantilla, `index.html`: las secciones de cada
+una están marcadas con `data-solo`, y el servidor quita las que no corresponden.
 
 ---
 
-## Ver el sitio en tu computador
+## Ver el sitio
 
-El sitio necesita servirse por HTTP (no basta con abrir `index.html` con doble clic,
-porque el navegador bloquea la lectura de `data/cursos.json` desde `file://`).
+**Con el sitio en mantenimiento**, entra al panel: tu navegador queda habilitado
+para ver el sitio real en coatzadrone.cl por 8 horas, mientras el público sigue
+viendo el aviso.
 
-Con PowerShell, desde la carpeta del proyecto:
+**En tu computador**, sin internet de por medio:
 
 ```bash
 powershell -ExecutionPolicy Bypass -File scripts/servidor-local.ps1
 ```
 
-Luego abre <http://localhost:8899>.
+Luego abre <http://localhost:8899>. La página de un curso se abre como
+`http://localhost:8899/index.html?curso=<curso>`. En local se ve el catálogo
+inicial de `data/cursos.json`, no el del panel.
 
 ---
 
-## Publicar cambios
+## Publicar cambios de código
 
-El sitio está conectado a Cloudflare Pages. Cada `git push` a la rama `main`
-publica automáticamente en **coatzadrone.cl** en menos de un minuto.
-
-```bash
-git add .
-git commit -m "Actualiza fechas del workshop de noviembre"
-git push
-```
+Cada `git push` a `main` republica el sitio en menos de dos minutos. Los cambios
+de cursos **no** necesitan esto: se publican desde el panel.
 
 Ver **[docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md)** para la configuración inicial.
 
@@ -71,8 +91,10 @@ Ver **[docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md)** para la configura
 
 | Documento | Para qué |
 |---|---|
-| [docs/CONFIGURAR.md](docs/CONFIGURAR.md) | Los datos que faltan antes de salir al aire |
-| [docs/GUIA-AGREGAR-CURSOS.md](docs/GUIA-AGREGAR-CURSOS.md) | Agregar o editar un curso paso a paso |
-| [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md) | GitHub + Cloudflare Pages + dominio .cl |
-| [docs/PAGOS.md](docs/PAGOS.md) | Mercado Pago y Flow: activación y links de pago |
-| [docs/PUBLICIDAD.md](docs/PUBLICIDAD.md) | Medición de leads y preparación de campañas |
+| [docs/PANEL.md](docs/PANEL.md) | El panel: cursos, fechas, precios e instructores |
+| [docs/CONFIGURAR.md](docs/CONFIGURAR.md) | Lo que falta antes de salir al aire |
+| [docs/PAGOS.md](docs/PAGOS.md) | Flow: activación y botón de pago |
+| [docs/FORMULARIO.md](docs/FORMULARIO.md) | Captación de leads con Brevo |
+| [docs/PUBLICIDAD.md](docs/PUBLICIDAD.md) | Medición y campañas |
+| [docs/GUIA-AGREGAR-CURSOS.md](docs/GUIA-AGREGAR-CURSOS.md) | Qué queda en `data/cursos.json` |
+| [docs/DEPLOY-CLOUDFLARE.md](docs/DEPLOY-CLOUDFLARE.md) | GitHub + Cloudflare + dominio .cl |

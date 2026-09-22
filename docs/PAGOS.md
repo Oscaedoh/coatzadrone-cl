@@ -40,12 +40,10 @@ por su integración con Webpay.
    - **Cantidad disponible:** los cupos del curso (así se cierra solo al llenarse)
    - **Fecha de vencimiento:** el día anterior al inicio del curso
 4. Copia la URL corta que te entrega (tipo `https://mpago.la/xxxxx`)
-5. Pégala en `data/cursos.json`:
 
-```json
-"pagos": {
-  "mercadopago_url": "https://mpago.la/xxxxx",
-```
+> **Mercado Pago está en pausa** por decisión del dueño: el panel no muestra su
+> casilla. Para volver a activarlo hay que agregar `mercadopago` a `MEDIOS_PAGO`
+> en `worker/catalogo.js`; desde ahí aparece su campo en el panel, junto al de Flow.
 
 ---
 
@@ -56,11 +54,12 @@ por su integración con Webpay.
 3. Panel → **Botón de pago** → **Crear botón**
 4. Completa nombre del curso, monto y descripción
 5. Flow entrega una URL tipo `https://www.flow.cl/btn.php?token=xxxxx`
-6. Pégala en `data/cursos.json`:
-
-```json
-  "flow_url": "https://www.flow.cl/btn.php?token=xxxxx",
-```
+6. Pégala en el panel, en la ficha del curso:
+   - **Precio y pago → Link de pago**, si sirve para todas las fechas del curso
+   - o en la **tarjeta de una fecha**, si esa edición tiene su propio botón (por
+     ejemplo, porque vale distinto)
+7. **Guardar y publicar**. Desde ese momento los botones del curso llevan directo
+   al checkout de Flow.
 
 ---
 
