@@ -244,10 +244,51 @@ input[type="checkbox"] { width: auto; accent-color: var(--rojo); }
 .ficha__nombre { font-weight: 600; }
 .ficha__sub { color: var(--gris); font-size: .8rem; }
 
+/* ---------- Ficha de curso: bloques plegables ---------- */
+
+.editor--una { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.plegables-acciones { display: flex; justify-content: flex-end; gap: 16px; margin: -6px 0 10px; }
+
+.plegable { padding: 0; }
+.plegable > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-radius: var(--radio);
+}
+.plegable > summary::-webkit-details-marker { display: none; }
+.plegable > summary::before {
+  content: ''; flex: none; width: 7px; height: 7px; margin: 0 3px;
+  border-right: 2px solid var(--gris); border-bottom: 2px solid var(--gris);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+.plegable[open] > summary::before { transform: rotate(45deg); }
+.plegable > summary:hover { background: #1B1B1F; }
+.plegable > summary:focus-visible { outline: 2px solid var(--rojo); outline-offset: -2px; }
+.plegable > summary h2 {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: .11em;
+  color: var(--texto); margin: 0; font-weight: 650;
+}
+.plegable > summary h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 6px; color: var(--gris); }
+.plegable__dato { margin-left: auto; font-size: .8rem; color: var(--gris); text-align: right; }
+.plegable[open] > summary { border-radius: var(--radio) var(--radio) 0 0; border-bottom: 1px solid var(--linea); }
+.plegable__cuerpo { padding: 18px 20px 20px; }
+.pista--intro { margin: 0 0 14px; font-size: .82rem; }
+
+/* Información básica: los datos a la izquierda, lo operativo a la derecha. */
+.basica { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); gap: 28px; }
+.basica h3 {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--gris); font-weight: 600; margin: 24px 0 10px;
+}
+.basica h3:first-child { margin-top: 0; }
+.basica__lado { border-left: 1px solid var(--linea); padding-left: 28px; }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 900px) {
   .editor { grid-template-columns: 1fr; }
+  .basica { grid-template-columns: 1fr; gap: 0; }
+  .basica__lado { border-left: 0; padding-left: 0; border-top: 1px solid var(--linea); margin-top: 24px; padding-top: 24px; }
 }
 
 @media (max-width: 700px) {
@@ -263,3 +304,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--rojo); }
   .pie { flex-wrap: wrap; }
   .pie__estado { width: 100%; }
 }
+
+/* Las fechas de una edición van en columnas fijas: la sesión 2 queda
+   debajo de la fecha de inicio aunque sean pocas. */
+.bloque .rej--fechas { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

@@ -329,20 +329,29 @@ function limpiarPagos(p) {
 
 function limpiarCohorte(ch, i) {
   ch = ch || {};
-  var inicio = fechaISO(ch.inicio);
-  if (!inicio) return null;   // una edicion sin fecha de inicio no es un producto
 
-  var fin = fechaISO(ch.fin);
+  // Las sesiones son los dias de clase, en orden: la primera es el inicio y
+  // la ultima el fin. Lo que no sea una fecha (textos de versiones
+  // anteriores, como "Martes 20 de octubre") se descarta.
+  var dias = (Array.isArray(ch.sesiones) ? ch.sesiones : []).map(fechaISO).filter(Boolean);
+  var inicioDado = fechaISO(ch.inicio);
+  if (inicioDado && dias.indexOf(inicioDado) === -1) dias.push(inicioDado);
+  dias = dias.filter(function (d, k) { return dias.indexOf(d) === k; }).sort().slice(0, 12);
+  if (!dias.length) return null;   // una edicion sin fecha de inicio no es un producto
+
+  var inicio = dias[0];
+  var fin = dias.length > 1 ? dias[dias.length - 1] : fechaISO(ch.fin);
   if (!fin || fin < inicio) fin = inicio;
+  // Un rango "desde / hasta" de antes, sin dias sueltos: se conserva como rango.
+  var sesiones = (dias.length > 1 || fin === inicio) ? dias : [];
 
   return {
     id: texto(ch.id, 40).replace(/[^a-zA-Z0-9-]/g, '') || ('ed-' + inicio.replace(/-/g, '') + '-' + (i + 1)),
     inicio: inicio,
     fin: fin,
     horario: texto(ch.horario, 120),
-    sesiones: lista(ch.sesiones, 12, 80),
+    sesiones: sesiones,
     cupos_totales: entero(ch.cupos_totales, 999),
-    cupos_disponibles: entero(ch.cupos_disponibles, 999),
     estado: deLista(ch.estado, ESTADOS_COHORTE),
     confirmada: ch.confirmada !== false,
     observaciones: parrafo(ch.observaciones, 300),

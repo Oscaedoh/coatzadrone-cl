@@ -29,13 +29,24 @@ pendientes.
 
 ## La ficha de un curso
 
-A la izquierda, el contenido; a la derecha, lo comercial.
+Está hecha de bloques que se abren y se cierran con un clic en su título. Cerrados,
+algunos muestran un resumen (cuántas ediciones y la próxima fecha, cuántos
+módulos). El panel recuerda cuáles dejaste abiertos, y arriba a la derecha están
+*Abrir todo* y *Cerrar todo*.
 
-**Información** — nombre, subtítulo y resumen. El resumen es el texto de la
-tarjeta del curso y también el que muestran Google, Facebook y WhatsApp cuando
-alguien comparte el enlace.
+En este orden:
 
-**Ficha** — software, nivel, modalidad, duración, idioma.
+**Información básica** — lo principal del curso en un solo bloque:
+
+| A la izquierda | A la derecha |
+|---|---|
+| **Información**: nombre, subtítulo y resumen. El resumen es el texto de la tarjeta del curso y también el que muestran Google, Facebook y WhatsApp al compartir el enlace | **Visibilidad**: *Publicado en la página* y el estado de inscripción |
+| **Ficha**: software, nivel, modalidad, duración, idioma | **Instructores**: quiénes lo dictan, marcados de la lista |
+| | **Dirección de la página**: `coatzadrone.cl/cursos/...`, el enlace para los anuncios |
+| | **Imagen**: *Subir imagen* o *Elegir existente* |
+
+**Fechas** — las ediciones del curso, con su precio y su link de pago. Ver
+[Ediciones, precios y pago](#ediciones-precios-y-pago).
 
 **Descripción** — el objetivo del programa y el enfoque. Una línea en blanco
 separa párrafos.
@@ -47,21 +58,7 @@ junto al precio: pon arriba los más convincentes.
 **Temario** — un bloque por módulo, con título, objetivo y contenidos. Se pueden
 reordenar con las flechas.
 
-**Fechas a la venta** — una tarjeta por edición, con todo lo de esa fecha en una
-pasada: días, horario, cupos, estado, valor, preventa, link de pago y
-observaciones. Lo que dejes vacío usa lo del curso.
-
 **Requisitos técnicos** — opcional. Si lo dejas vacío, la sección no aparece.
-
-Y a la derecha:
-
-| Bloque | Para qué |
-|---|---|
-| **Visibilidad** | *Publicado en la página* lo muestra u oculta. El estado dice si las inscripciones están abiertas o próximas |
-| **Imagen** | La foto del curso. *Subir imagen* o *Elegir existente* |
-| **Precio y pago** | Valor general, preventa, link de pago de Flow y observaciones junto al precio |
-| **Instructores** | Quiénes lo dictan. Se marcan de la lista |
-| **Dirección de la página** | `coatzadrone.cl/cursos/...` — el enlace para los anuncios |
 
 Arriba de la ficha: **Ver en el sitio**, **Duplicar** y **Eliminar**.
 
@@ -95,21 +92,50 @@ Dos formas, según lo que quieras:
 
 ---
 
-## Fechas, precios y pago
+## Ediciones, precios y pago
 
-Lo que se vende no es el curso: es la **edición**. Una fecha concreta, con su
-cupo, su precio y su link de pago. Un curso puede tener varias al año.
+Lo que se vende no es el curso: es la **edición**. Una versión del curso con sus
+propias fechas, cupos, precio y link de pago. Un curso puede tener varias al año.
+**No hay precio general del curso:** todo lo comercial está en cada edición.
+
+Cada edición es una tarjeta en el bloque *Fechas*:
+
+| Campo | Qué hace |
+|---|---|
+| **Fecha de inicio** | El primer día de clase |
+| **Sesiones** | Cuántos días de clase tiene. Al subirlo aparecen *Fecha sesión 2*, *Fecha sesión 3*… propuestas en días seguidos; se cambian si las clases son, por ejemplo, un sábado por semana |
+| **Estado** | Abierta, Últimos cupos, Agotada u Oculta |
+| **Cupos** | Cuántos participantes. **En 0 la página no habla de cupos** |
+| **Valor** | El precio en pesos. Vacío: la página dice «Consultar» |
+| **Precio rebajado** y **hasta** | Un precio menor por tiempo limitado. La página lo destaca, muestra el valor como referencia y **vuelve sola al valor** al pasar la fecha |
+| **Link de pago** | El botón de Flow de esta edición |
+| **Observaciones de esta fecha** | Un texto corto junto a la fecha y al precio: horario, si incluye factura, etc. |
+
+Si mueves la fecha de inicio, las demás sesiones se corren los mismos días: así
+se cambia una edición de semana sin reescribir cada fecha.
+
+**+ Agregar edición** crea una nueva con el valor y los cupos de la anterior. El
+link de pago no se copia: cada edición debería cobrar con su propio botón.
 
 | En el panel | En la página |
 |---|---|
 | Cargas un link de pago | Los botones llevan directo al checkout de Flow |
 | Dejas el link vacío | Los botones llevan al formulario de contacto |
-| Preventa con fecha tope | Se muestra el precio rebajado y **vuelve solo al normal** al pasar esa fecha |
-| Marcas una fecha *Agotada* | Desaparece el botón de pago y queda *Avísenme de la próxima* |
-| Marcas una fecha *Oculta* | Deja de aparecer, sin borrarla |
-| Un curso sin fechas | Sale como **«Por anunciar»**, con el botón *Avísenme* |
+| Marcas una edición *Agotada* | Desaparece el botón de pago y queda *Avísenme de la próxima* |
+| Marcas una edición *Oculta* | Deja de aparecer, sin borrarla |
+| Un curso sin ediciones | Sale como **«Por anunciar»**, con el botón *Avísenme* |
 
-Las fechas que ya terminaron se esconden solas: no hay que borrarlas.
+Las ediciones que ya terminaron se esconden solas: no hay que borrarlas.
+
+El calendario (`.ics`) que se descarga desde la página trae un evento por
+sesión, como día completo: el panel no pide horario, y el sitio no inventa uno.
+
+> **De la versión anterior del panel.** El valor, el link de pago y las
+> observaciones que eran del curso completo pasaron solos a cada una de sus
+> ediciones, igual que un horario cargado aparte, que quedó en las
+> observaciones. Un curso **sin** ediciones que tenía valor o link los conserva
+> y el bloque *Fechas* lo avisa: pasan a la primera edición que agregues, o se
+> quitan con *Quitarlos*.
 
 ### El «Próximo workshop» de la portada se elige solo
 
@@ -220,7 +246,7 @@ blanco por una falla del panel.
 | «Falta el almacén» | El binding `CONFIG` de KV no está conectado en `wrangler.jsonc` |
 | «Clave incorrecta» | Eso mismo. No hay recuperación: se cambia el secreto en Cloudflare |
 | «Hubo cambios desde otra ventana» | Guardaste desde otra pestaña. Recarga |
-| La lista de errores al guardar | Un curso sin nombre, una fecha sin día de inicio o un link sin `https://`. Clic en cada error para ir al campo |
+| La lista de errores al guardar | Un curso sin nombre, una edición sin fecha de inicio, sesiones fuera de orden, un precio rebajado mayor que el valor o un link sin `https://`. Clic en cada error para abrir el bloque donde está |
 | La página no refleja un cambio | Espera un minuto y recarga con `Ctrl+F5` |
 
 Ver también [PAGOS.md](PAGOS.md) para crear los links de pago.

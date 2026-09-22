@@ -12,8 +12,8 @@ contacto, los ids de analítica (`config`) y las preguntas frecuentes (`faq`).
 |---|---|---|
 | 1 | Teléfono de WhatsApp | ✅ +56 9 5704 2650 |
 | 2 | Correo de contacto | ✅ `contacto@coatzadrone.cl` recibe y envía |
-| 3 | Precio en CLP | ✅ $275.000 fijo, sin preventa |
-| 4 | Fechas del curso | ✅ deliberadamente en "Por anunciar" |
+| 3 | Precio en CLP | ✅ $275.000 |
+| 4 | Fechas del curso | se cargan en el panel |
 | 5 | Formulario a Brevo | ⚠️ falta el secreto `BREVO_API_KEY` |
 | 6 | GA4 y Píxel de Meta | ❌ pendiente, necesario antes de pautar |
 | 7 | Links de pago | ❌ Flow en creación |
@@ -56,59 +56,32 @@ de Gmail; si se filtra, se revoca y se genera otra en Brevo → *SMTP & API → 
 
 ## 3. Precio en pesos chilenos — ✅ listo
 
-Definido: **$275.000 CLP fijo, sin preventa.**
+Definido para Pix4Dfields: **$275.000 CLP.**
 
-```json
-"precio": {
-  "clp": 275000,
-  "clp_early": null,
-  "early_hasta": null,
-  "usd": null
-}
-```
-
-Si más adelante quieres hacer una preventa real:
-
-- `clp` — valor general.
-- `clp_early` — valor preventa. Al llenarlo, el sitio muestra el precio preventa
-  destacado y el general como referencia.
-- `early_hasta` — hasta cuándo rige, formato `AAAA-MM-DD`.
+El precio es de cada **edición** y se edita en el panel, en el bloque *Fechas* del
+curso: *Valor*, y si quieres una rebaja por tiempo limitado, *Precio rebajado* y
+*Precio rebajado hasta*. Pasada esa fecha, la página vuelve sola al valor.
+Ver [PANEL.md](PANEL.md#ediciones-precios-y-pago).
 
 > **Ojo con los descuentos.** Mostrar un "precio normal" que nunca se cobró es
-> publicidad engañosa bajo la Ley 19.496 y SERNAC ha multado por eso. El precio de
-> referencia debe haber sido el cobrado efectivamente antes. Una preventa que
-> realmente sube de precio al vencer sí es válida.
+> publicidad engañosa bajo la Ley 19.496 y SERNAC ha multado por eso. El valor de
+> referencia debe haber sido el cobrado efectivamente antes. Una rebaja que
+> realmente termina y vuelve al valor sí es válida.
 
 ---
 
-## 4. Fechas del curso — ✅ por ahora, "Por anunciar"
+## 4. Fechas del curso
 
-Decisión actual: sin fecha fija. `"cohortes": []` hace que la sección de calendario
-muestre "Por anunciar" y capte leads con prioridad de cupo.
+Se cargan en el panel, en el bloque *Fechas* del curso: una edición por cada
+versión, con su fecha de inicio y el número de sesiones (cada sesión con su
+fecha). Un curso sin ediciones muestra "Por anunciar" y capta leads con
+prioridad de cupo.
 
-Cuando tengas la fecha, agrega la cohorte dentro del arreglo:
+El sitio genera solo los botones **Descargar .ics** y **Google Calendar** a partir
+de esas fechas. No hay que crear nada a mano.
 
-```json
-"cohortes": [
-  {
-    "id": "cohorte-oct-2026",
-    "confirmada": true,
-    "etiqueta": "Octubre 2026",
-    "inicio": "2026-10-20",
-    "fin": "2026-10-22",
-    "horario": "18:00 a 22:00 h (hora de Chile)",
-    "sesiones": ["Martes 20 de octubre", "Miércoles 21 de octubre", "Jueves 22 de octubre"],
-    "cupos_totales": 15,
-    "cupos_disponibles": 15,
-    "estado": "abierto"
-  }
-]
-```
-
-El sitio genera solo los botones **Descargar .ics** y **Google Calendar** a partir de
-estas fechas. No hay que crear nada a mano.
-
-Para cerrar una cohorte llena: cambia `"estado": "cerrado"` y desaparece de la web.
+Para cerrar una edición llena: estado **Agotada**. Para sacarla sin borrarla:
+**Oculta**.
 
 ---
 
@@ -151,16 +124,8 @@ Ver [PUBLICIDAD.md](PUBLICIDAD.md) para el detalle de los eventos que ya están 
 
 ## 7. Links de pago
 
-```json
-"pagos": {
-  "mercadopago_url": "https://mpago.la/xxxxx",
-  "flow_url": "https://www.flow.cl/btn.php?token=xxxxx",
-  "paypal_url": "",
-  "transferencia": true
-}
-```
-
-Ver [PAGOS.md](PAGOS.md) para cómo generar cada link.
+Se pegan en el panel, en cada edición del curso (*Link de pago*). Ver
+[PAGOS.md](PAGOS.md) para cómo generar el botón en Flow.
 
 ---
 

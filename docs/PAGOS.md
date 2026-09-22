@@ -54,12 +54,11 @@ por su integración con Webpay.
 3. Panel → **Botón de pago** → **Crear botón**
 4. Completa nombre del curso, monto y descripción
 5. Flow entrega una URL tipo `https://www.flow.cl/btn.php?token=xxxxx`
-6. Pégala en el panel, en la ficha del curso:
-   - **Precio y pago → Link de pago**, si sirve para todas las fechas del curso
-   - o en la **tarjeta de una fecha**, si esa edición tiene su propio botón (por
-     ejemplo, porque vale distinto)
-7. **Guardar y publicar**. Desde ese momento los botones del curso llevan directo
-   al checkout de Flow.
+6. Pégala en el panel, en la ficha del curso → bloque **Fechas** → la edición
+   que corresponde → **Link de pago**. Cada edición lleva el suyo: el monto del
+   botón tiene que coincidir con el valor de esa edición
+7. **Guardar y publicar**. Desde ese momento los botones de esa edición llevan
+   directo al checkout de Flow.
 
 ---
 

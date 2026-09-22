@@ -90,6 +90,23 @@
     return fechaCorta(c.inicio) + ' al ' + fechaCorta(c.fin);
   }
 
+  var DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+  // Los días de clase de una edición, cuando se cargaron uno por uno.
+  function diasDe(ch) {
+    return (ch.sesiones || []).filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); });
+  }
+
+  // "sáb 31 oct · sáb 7 nov · sáb 14 nov". Vacío si es una sola sesión.
+  function textoSesiones(ch) {
+    var dias = diasDe(ch);
+    if (dias.length < 2) return '';
+    return dias.map(function (d) {
+      var f = partesFecha(d);
+      return DIAS[new Date(Date.UTC(f.a, f.m - 1, f.d)).getUTCDay()] + ' ' + fechaCorta(d);
+    }).join(' · ');
+  }
+
   /* ---------- Catálogo ---------- */
 
   function cursosVisibles() {
@@ -146,7 +163,7 @@
     return (g.mercadopago_url || g.flow_url || g.paypal_url) ? g : (curso.pagos || {});
   }
 
-  // La preventa vence sola. Sin esto, un descuento quedaría vigente para siempre.
+  // El precio rebajado vence solo. Sin esto, un descuento quedaría vigente para siempre.
   function enPreventa(p) {
     return !!(p.clp_early && p.clp && (!p.early_hasta || p.early_hasta >= hoyISO()));
   }
@@ -161,8 +178,8 @@
     if (enPreventa(p)) {
       return {
         texto: precioCLP(p.clp_early),
-        nota: 'Precio preventa. Valor general ' + precioCLP(p.clp) +
-              (p.early_hasta ? ' · Preventa hasta el ' + fechaLarga(p.early_hasta) : '')
+        nota: 'Precio rebajado. Valor normal ' + precioCLP(p.clp) +
+              (p.early_hasta ? ' · Rebaja válida hasta el ' + fechaLarga(p.early_hasta) : '')
       };
     }
     if (p.clp) return { texto: precioCLP(p.clp), nota: p.nota || (curso.precio || {}).nota || '' };
@@ -239,7 +256,36 @@
   function horasDeCohorte(cohorte) {
     var m = String(cohorte.horario || '').match(/(\d{1,2}):(\d{2})[^\d]+(\d{1,2}):(\d{2})/);
     if (m) return { ini: m[1] + ':' + m[2], fin: m[3] + ':' + m[4] };
-    return { ini: '18:00', fin: '22:00' };
+    return null;
+  }
+
+  // "20261031": el formato de día completo de los calendarios.
+  function diaCompacto(iso) {
+    return String(iso).replace(/-/g, '');
+  }
+
+  function diaSiguiente(iso) {
+    var f = partesFecha(iso);
+    return new Date(Date.UTC(f.a, f.m - 1, f.d + 1)).toISOString().slice(0, 10);
+  }
+
+  /**
+   * Los tramos que ocupa una edición en el calendario: uno por día de clase.
+   * Sin horario cargado van como días completos; inventar una hora sería
+   * publicar un dato que nadie confirmó.
+   */
+  function tramosDeCohorte(cohorte) {
+    var h = horasDeCohorte(cohorte);
+    var dias = diasDe(cohorte);
+    var bloques = dias.length
+      ? dias.map(function (d) { return { ini: d, fin: d }; })
+      : [{ ini: cohorte.inicio, fin: cohorte.fin || cohorte.inicio }];
+    return bloques.map(function (b) {
+      return h
+        ? { inicio: 'DTSTART:' + aUTC(b.ini, h.ini), fin: 'DTEND:' + aUTC(b.fin, h.fin), g: aUTC(b.ini, h.ini) + '/' + aUTC(b.fin, h.fin) }
+        : { inicio: 'DTSTART;VALUE=DATE:' + diaCompacto(b.ini), fin: 'DTEND;VALUE=DATE:' + diaCompacto(diaSiguiente(b.fin)),
+            g: diaCompacto(b.ini) + '/' + diaCompacto(diaSiguiente(b.fin)) };
+    });
   }
 
   function urlPublicaCurso(curso) {
@@ -247,37 +293,45 @@
   }
 
   function descargarICS(curso, cohorte) {
-    var h = horasDeCohorte(cohorte);
-    var uid = curso.id + '-' + cohorte.id + '@coatzadrone.cl';
+    var sello = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    var sesiones = textoSesiones(cohorte);
     var desc = (curso.resumen || '').replace(/\n/g, ' ') +
                '\\n\\nModalidad: ' + (curso.modalidad || '') +
                '\\nDuración: ' + (curso.duracion || '') +
-               '\\nHorario: ' + (cohorte.horario || '') +
+               (cohorte.horario ? '\\nHorario: ' + cohorte.horario : '') +
+               (sesiones ? '\\nSesiones: ' + sesiones : '') +
                '\\n\\nMás información: ' + urlPublicaCurso(curso);
+
+    // Un evento por día de clase: si las sesiones no son seguidas, un solo
+    // evento de punta a punta bloquearía días en que no hay clase.
+    var eventos = [];
+    tramosDeCohorte(cohorte).forEach(function (t, n) {
+      eventos.push(
+        'BEGIN:VEVENT',
+        'UID:' + curso.id + '-' + cohorte.id + '-' + (n + 1) + '@coatzadrone.cl',
+        'DTSTAMP:' + sello,
+        t.inicio,
+        t.fin,
+        'SUMMARY:' + curso.titulo + ' — CoatzaDrone Chile',
+        'DESCRIPTION:' + desc,
+        'LOCATION:' + (curso.modalidad || 'Online en vivo'),
+        'URL:' + urlPublicaCurso(curso),
+        'BEGIN:VALARM',
+        'TRIGGER:-P1D',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:' + (n === 0 ? 'Tu curso comienza mañana' : 'Mañana tienes clase'),
+        'END:VALARM',
+        'END:VEVENT'
+      );
+    });
 
     var ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//CoatzaDrone Chile//Cursos Pix4D//ES',
       'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      'UID:' + uid,
-      'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''),
-      'DTSTART:' + aUTC(cohorte.inicio, h.ini),
-      'DTEND:' + aUTC(cohorte.fin || cohorte.inicio, h.fin),
-      'SUMMARY:' + curso.titulo + ' — CoatzaDrone Chile',
-      'DESCRIPTION:' + desc,
-      'LOCATION:' + (curso.modalidad || 'Online en vivo'),
-      'URL:' + urlPublicaCurso(curso),
-      'BEGIN:VALARM',
-      'TRIGGER:-P1D',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:Tu curso comienza mañana',
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
+      'METHOD:PUBLISH'
+    ].concat(eventos, ['END:VCALENDAR']).join('\r\n');
 
     var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     var url = URL.createObjectURL(blob);
@@ -292,12 +346,15 @@
   }
 
   function enlaceGoogleCalendar(curso, cohorte) {
-    var h = horasDeCohorte(cohorte);
+    // Google Calendar recibe un solo evento por enlace: el primer día de
+    // clase, con todas las sesiones escritas en el detalle.
+    var sesiones = textoSesiones(cohorte);
     var params = [
       'action=TEMPLATE',
       'text=' + encodeURIComponent(curso.titulo + ' — CoatzaDrone Chile'),
-      'dates=' + aUTC(cohorte.inicio, h.ini) + '/' + aUTC(cohorte.fin || cohorte.inicio, h.fin),
-      'details=' + encodeURIComponent((curso.resumen || '') + '\n\n' + urlPublicaCurso(curso)),
+      'dates=' + tramosDeCohorte(cohorte)[0].g,
+      'details=' + encodeURIComponent((curso.resumen || '') +
+        (sesiones ? '\n\nSesiones: ' + sesiones : '') + '\n\n' + urlPublicaCurso(curso)),
       'location=' + encodeURIComponent(curso.modalidad || 'Online en vivo')
     ];
     return 'https://calendar.google.com/calendar/render?' + params.join('&');
@@ -309,13 +366,15 @@
   function htmlHechos(c, ch) {
     var items = [
       ['Fecha', ch ? rangoFechas(ch) : 'Por anunciar'],
+      ['Sesiones', ch && textoSesiones(ch)],
       ['Horario', ch && ch.horario],
       ['Modalidad', c.modalidad],
       ['Duración', c.duracion],
       ['Nivel', c.nivel]
     ];
     if (ch && ch.estado === 'agotada') items.push(['Cupos', 'Agotados']);
-    else if (ch && ch.cupos_disponibles != null) items.push(['Cupos', ch.cupos_disponibles + ' disponibles']);
+    else if (ch && ch.estado === 'ultimos-cupos') items.push(['Cupos', 'Últimos cupos']);
+    else if (ch && ch.cupos_totales) items.push(['Cupos', ch.cupos_totales + ' por edición']);
 
     return items.filter(function (x) { return x[1]; }).map(function (x) {
       return '<li><span>' + esc(x[0]) + '</span><strong>' + esc(x[1]) + '</strong></li>';
@@ -345,7 +404,9 @@
     else if (abierto(c)) contacto = '<a class="btn btn--primario btn--bloque" href="#inscripcion" data-avisenme="' + esc(c.id) + '">Reservar mi cupo</a>';
     else contacto = '<a class="btn btn--primario btn--bloque" href="#inscripcion" data-avisenme="' + esc(c.id) + '">Avísenme cuando abra</a>';
 
-    var obs = (c.observaciones || '').trim();
+    // Las observaciones son de cada edición; las del curso quedan de la
+    // versión anterior del panel, para cursos que aún no tienen fechas.
+    var obs = ((ch && ch.observaciones) || c.observaciones || '').trim();
 
     return '<div class="precio-caja">' +
       '<p class="eyebrow" style="margin-bottom:10px">Inversión</p>' +
@@ -367,14 +428,12 @@
   }
 
   function htmlCohorte(c, ch, i) {
-    var sesiones = (ch.sesiones || []).join(' · ');
+    var sesiones = textoSesiones(ch);
     var agotada = ch.estado === 'agotada';
-    var cupos = agotada
-      ? 'Sin cupos disponibles'
-      : (ch.cupos_disponibles != null
-          ? ch.cupos_disponibles + ' cupos disponibles' + (ch.cupos_totales ? ' de ' + ch.cupos_totales : '')
-          : '');
-    if (!agotada && ch.estado === 'ultimos-cupos') cupos = 'Últimos cupos' + (cupos ? ' · ' + cupos : '');
+    // Cupos en 0 o vacío: la edición no habla de cupos.
+    var cupos = agotada ? 'Sin cupos disponibles'
+      : ch.estado === 'ultimos-cupos' ? 'Últimos cupos'
+      : ch.cupos_totales ? ch.cupos_totales + ' cupos' : '';
 
     var ops = opcionesPago(c, ch);
     var precio = textoPrecio(c, ch);
@@ -640,7 +699,7 @@
     var agotada = ch && ch.estado === 'agotada';
     $('#cursoCompra').innerHTML =
       '<div class="hero__precio"><span>' + esc(p.texto) + '</span>' +
-        '<small>' + esc(p.texto === 'Consultar' ? 'Valor por confirmar' : (enPreventa(precioDe(c, ch)) ? 'Precio preventa · por participante' : 'Por participante')) + '</small></div>' +
+        '<small>' + esc(p.texto === 'Consultar' ? 'Valor por confirmar' : (enPreventa(precioDe(c, ch)) ? 'Precio rebajado · por participante' : 'Por participante')) + '</small></div>' +
       '<div class="hero__acciones">' +
         (ops.length
           ? '<a class="btn btn--primario"' + atributosPago(c, ops[0]) + '>Inscribirme y pagar</a>' +

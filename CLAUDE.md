@@ -108,8 +108,17 @@ en una tienda: textos, imagen, temario, instructores, fechas, precio y link de
 pago. Los instructores son una lista aparte que los cursos referencian por id.
 
 Lo que se **compra** no es el curso sino la **edición**: una fecha con su cupo,
-su precio y su link de pago. Lo comercial vive en cada cohorte y hereda lo del
-curso solo cuando la edición no lo define.
+su precio y su link de pago. Desde el 22 de septiembre el panel no tiene precio
+ni link a nivel de curso: todo lo comercial se edita en cada edición.
+
+- Una edición es una lista de días de clase: `sesiones` (fechas ISO, la primera
+  es el inicio); `inicio` y `fin` se derivan de ella en `limpiarCohorte()`.
+- Sin horario: se quitó del panel. El `.ics` sale como días completos (no se
+  inventa una hora). `cupos_disponibles` también se quitó; `cupos_totales` en 0
+  hace que la página no hable de cupos.
+- El sitio aún lee `precio`/`pagos`/`observaciones` del curso como respaldo: el
+  panel los migra a las ediciones al cargar y solo los conserva en un curso sin
+  ediciones, avisándolo en el bloque *Fechas*.
 
 Dónde vive cada cosa:
 
