@@ -29,11 +29,19 @@ var WHATSAPP = '56957042650';
  *   b) Sin tocar codigo: en Cloudflare, Settings -> Variables and Secrets,
  *      crear la variable SITIO_PUBLICO con valor 1. Manda por sobre esto.
  *
- * El dominio de trabajo (*.workers.dev) nunca ve el aviso: ahi seguimos
- * revisando el sitio real mientras el publico ve la pagina de aviso.
+ * Los dominios de trabajo nunca ven el aviso: ahi seguimos revisando el sitio
+ * real mientras el publico ve la pagina de aviso.
  */
 var MANTENIMIENTO = true;
-var DOMINIO_DE_TRABAJO = '.workers.dev';
+
+/**
+ * Dominios desde los que se ve el sitio real durante el mantenimiento.
+ *
+ * El de la marca es trabajo.coatzadrone.cl. El *.workers.dev que Cloudflare
+ * asigna por defecto lleva el nombre de la cuenta en la URL, asi que no sirve
+ * para compartir; queda aqui solo por si el dominio propio se cae.
+ */
+var DOMINIOS_DE_TRABAJO = ['trabajo.coatzadrone.cl', '.workers.dev'];
 
 export default {
   async fetch(request, env) {
@@ -70,7 +78,10 @@ function enMantenimiento(env) {
 }
 
 function esDominioDeTrabajo(url) {
-  return url.hostname.indexOf(DOMINIO_DE_TRABAJO) !== -1;
+  var host = url.hostname.toLowerCase();
+  return DOMINIOS_DE_TRABAJO.some(function (d) {
+    return d.charAt(0) === '.' ? host.slice(-d.length) === d : host === d;
+  });
 }
 
 /**

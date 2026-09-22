@@ -60,8 +60,12 @@ gráfica de la marca, WhatsApp, correo y el enlace al directorio de Pix4D.
 
 - Responde **HTTP 503**, no 200. Es deliberado: le dice a Google que la caída es
   temporal. Un 200 arriesga que indexe el aviso como si fuera el sitio.
-- El sitio real sigue visible en **<https://coatzadrone-cl.oscaedoh.workers.dev>**,
-  con `X-Robots-Tag: noindex` para que no compita con el dominio principal.
+- El sitio real se revisa en **<https://trabajo.coatzadrone.cl>** (hay que darlo de
+  alta en Cloudflare: `coatzadrone-cl` → *Settings* → *Domains & Routes* → *Add* →
+  *Custom domain*). Lleva `X-Robots-Tag: noindex` para no competir con el dominio
+  principal en Google.
+- El `*.workers.dev` que Cloudflare asigna por defecto **no se usa para compartir**:
+  incluye el nombre de la cuenta en la URL. Queda solo como respaldo.
 - `/api/lead` sigue funcionando en ambos dominios.
 
 **Para volver a publicarlo**, cualquiera de los dos:
