@@ -29,7 +29,7 @@
      _headers obligan a revalidar CSS y JS en cada visita. Se dejo en 2 para
      invalidar las caches creadas mientras esos archivos se servian como
      "immutable" por un ano. -->
-<link rel="stylesheet" href="assets/css/styles.css?v=4">
+<link rel="stylesheet" href="assets/css/styles.css?v=5">
 
 <!-- Datos estructurados: organización + cursos (se completa dinámicamente en app.js) -->
 <script type="application/ld+json">
@@ -162,11 +162,11 @@
           <p class="eyebrow" style="margin-bottom:10px">Inversión</p>
           <div class="precio-caja__monto" id="precioMonto">Consultar</div>
           <p class="precio-caja__nota" id="precioNota"></p>
+          <p class="precio-caja__obs" id="precioObs" hidden></p>
           <ul id="precioIncluye"></ul>
           <div id="botonesPago" hidden></div>
           <a class="btn btn--primario btn--bloque" href="#inscripcion" data-evento="cta_precio">Reservar mi cupo</a>
           <div class="medios-pago">
-            <span class="medio">Mercado Pago</span>
             <span class="medio">Flow / Webpay</span>
             <span class="medio">Transferencia</span>
             <span class="medio">Pago internacional</span>
@@ -423,6 +423,6 @@
   </div>
 </aside>
 
-<script src="assets/js/app.js?v=4"></script>
+<script src="assets/js/app.js?v=5"></script>
 </body>
 </html>

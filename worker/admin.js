@@ -13,7 +13,7 @@
  * noindex, asi que no aparece en buscadores.
  */
 
-import { leerBase, leerCambios, guardarCambios, fusionar, limpiarCambios, hayKV } from './catalogo.js';
+import { leerBase, leerCambios, guardarCambios, fusionar, limpiarCambios, hayKV, MEDIOS_PAGO } from './catalogo.js';
 
 /* ---------- Puerta ---------- */
 
@@ -67,12 +67,16 @@ export async function api(request, env) {
     return json({
       ok: true,
       kv: hayKV(env),
+      // El panel dibuja una casilla por medio habilitado. Asi apagar uno es
+      // cambiar una lista en catalogo.js, sin tocar la interfaz.
+      medios: MEDIOS_PAGO,
       actualizado: datos.actualizado,
       cursos: (datos.cursos || []).map(function (c) {
         return {
           id: c.id,
           titulo: c.titulo,
           software: c.software,
+          observaciones: c.observaciones || '',
           estado: c.estado,
           precio: c.precio || {},
           pagos: c.pagos || {},
@@ -146,8 +150,15 @@ var HTML = `<!doctype html>
     background:var(--carbon); border:1px solid var(--linea); border-radius:12px;
     padding:20px; margin-bottom:20px;
   }
-  .curso > header { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; margin-bottom:6px; }
-  .curso h2 { margin:0; font-size:1.05rem; font-weight:600; }
+  .curso > header { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+  /* El nombre se edita donde se lee. Parece un titulo hasta que lo tocas: sin
+     un campo aparte que obligue a mirar en dos lados para el mismo dato. */
+  .titulo-input {
+    flex:1 1 260px; width:auto; font-size:1.05rem; font-weight:600;
+    background:transparent; border-color:transparent; padding:7px 10px; margin-left:-10px;
+  }
+  .titulo-input:hover { border-color:var(--linea); background:#0A0A0C; }
+  .titulo-input:focus { background:#0A0A0C; }
   .tag {
     font-size:.68rem; text-transform:uppercase; letter-spacing:.09em;
     color:var(--gris); border:1px solid var(--linea); border-radius:99px; padding:3px 10px;
@@ -157,6 +168,8 @@ var HTML = `<!doctype html>
     color:var(--gris); margin:24px 0 10px; font-weight:600;
   }
   .rej { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+  .rej--compacta { grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px; }
+  .pista { color:var(--gris); font-size:.76rem; margin:6px 0 0; }
   label { display:block; font-size:.74rem; color:var(--gris); margin-bottom:5px; }
   input, select, textarea {
     width:100%; background:#0A0A0C; color:var(--texto);
@@ -166,10 +179,11 @@ var HTML = `<!doctype html>
   input:focus, select:focus, textarea:focus { outline:2px solid var(--rojo); outline-offset:1px; }
   .fecha {
     border:1px solid var(--linea); border-left:3px solid var(--rojo);
-    border-radius:9px; padding:16px; margin-bottom:12px; background:#121215;
+    border-radius:9px; padding:14px 16px; margin-bottom:10px; background:#121215;
   }
-  .fecha__top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .fecha__top strong { font-size:.85rem; }
+  .fecha__top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .fecha__top strong { font-size:.8rem; color:var(--gris); text-transform:uppercase; letter-spacing:.09em; }
+  .fecha .rej + .rej { margin-top:10px; }
   button {
     font:inherit; cursor:pointer; border-radius:7px; border:1px solid var(--linea);
     background:#1F1F24; color:var(--texto); padding:9px 16px;
@@ -193,7 +207,8 @@ var HTML = `<!doctype html>
     display:flex; gap:14px; align-items:center; justify-content:flex-end;
   }
   .pie small { color:var(--gris); margin-right:auto; font-size:.8rem; }
-  textarea { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.78rem; min-height:170px; }
+  #json { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.78rem; min-height:170px; }
+  .obs { min-height:60px; resize:vertical; line-height:1.45; }
   [hidden] { display:none !important; }
   @media (max-width:560px) { .pie { flex-wrap:wrap; } .pie small { width:100%; margin-bottom:4px; } }
 </style>
@@ -258,6 +273,17 @@ var HTML = `<!doctype html>
     ['cerrado', 'Oculta']
   ];
 
+  // Medios de pago: qué casilla dibujar y de qué campo sale. Los habilitados
+  // los manda el servidor, para que apagar uno no obligue a tocar esto.
+  var MEDIOS = ['flow'];
+  var MEDIO_NOMBRE = {
+    flow: 'Link de pago (Flow / Webpay)',
+    mercadopago: 'Link de Mercado Pago',
+    paypal: 'Link de PayPal'
+  };
+  var MEDIO_CLASE = { flow: 'fl', mercadopago: 'mp', paypal: 'pp' };
+  var MEDIO_CAMPO = { flow: 'flow_url', mercadopago: 'mercadopago_url', paypal: 'paypal_url' };
+
   function esc(t) {
     return String(t == null ? '' : t)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -278,47 +304,49 @@ var HTML = `<!doctype html>
       }).join('') + '</select></div>';
   }
 
-  function bloquePagos(p, clase) {
-    p = p || {};
-    return '<div class="rej">' +
-      campo('Link de Mercado Pago', clase + ' mp', p.mercadopago_url, 'url', 'placeholder="https://..."') +
-      campo('Link de Flow / Webpay', clase + ' fl', p.flow_url, 'url', 'placeholder="https://..."') +
-      campo('Link de PayPal (opcional)', clase + ' pp', p.paypal_url, 'url', 'placeholder="https://..."') +
-      '</div>';
+  function area(etiqueta, clase, valor, pista) {
+    return '<div style="margin-top:12px"><label>' + esc(etiqueta) + '</label>' +
+      '<textarea class="obs ' + clase + '" rows="2" placeholder="' + esc(pista || '') + '">' +
+      esc(valor || '') + '</textarea></div>';
   }
 
-  function bloquePrecio(p, clase) {
+  function camposPago(p, clase) {
     p = p || {};
-    return '<div class="rej">' +
-      campo('Valor en pesos', clase + ' clp', p.clp, 'number', 'min="0" step="1000" placeholder="275000"') +
-      campo('Valor preventa (opcional)', clase + ' ear', p.clp_early, 'number', 'min="0" step="1000"') +
-      campo('Preventa hasta', clase + ' eah', p.early_hasta, 'date') +
-      '</div>';
+    return MEDIOS.map(function (m) {
+      return campo(MEDIO_NOMBRE[m] || m, clase + ' ' + MEDIO_CLASE[m],
+        p[MEDIO_CAMPO[m]], 'url', 'placeholder="https://..."');
+    }).join('');
   }
 
+  /**
+   * Una edición en una sola tarjeta, sin subtítulos ni secciones anidadas.
+   * Todo lo que define esa fecha se ve y se edita de una pasada.
+   */
   function bloqueFecha(ch, i) {
     ch = ch || {};
+    var p = ch.precio || {};
     return '<div class="fecha" data-fecha>' +
       '<div class="fecha__top">' +
         '<strong>Edición ' + (i + 1) + '</strong>' +
         '<button type="button" class="btn-mini btn-borrar" data-quitar>Eliminar</button>' +
       '</div>' +
-      '<div class="rej">' +
-        campo('Primer día', 'f-ini', ch.inicio, 'date') +
-        campo('Último día', 'f-fin', ch.fin, 'date') +
-        campo('Horario', 'f-hor', ch.horario, 'text', 'placeholder="18:00 a 22:00 (hora de Chile)"') +
-      '</div>' +
-      '<div class="rej" style="margin-top:12px">' +
-        campo('Cupos totales', 'f-ct', ch.cupos_totales, 'number', 'min="0"') +
-        campo('Cupos disponibles', 'f-cd', ch.cupos_disponibles, 'number', 'min="0"') +
+      '<div class="rej rej--compacta">' +
+        campo('Desde', 'f-ini', ch.inicio, 'date') +
+        campo('Hasta', 'f-fin', ch.fin, 'date') +
+        campo('Horario', 'f-hor', ch.horario, 'text', 'placeholder="18:00 a 22:00"') +
+        campo('Cupos', 'f-ct', ch.cupos_totales, 'number', 'min="0" placeholder="12"') +
+        campo('Disponibles', 'f-cd', ch.cupos_disponibles, 'number', 'min="0"') +
         selector('Estado', 'f-est', ch.estado || 'abierta', ESTADOS_FECHA) +
       '</div>' +
-      '<h3 style="margin-top:20px">Precio de esta edición</h3>' +
-      bloquePrecio(ch.precio, 'f-p') +
-      '<h3>Links de pago de esta edición</h3>' +
-      bloquePagos(ch.pagos, 'f-g') +
-      '<p style="color:var(--gris);font-size:.78rem;margin:10px 0 0">' +
-        'Si dejas el precio o los links vacíos, se usan los generales del curso.</p>' +
+      '<div class="rej rej--compacta">' +
+        campo('Valor', 'f-p clp', p.clp, 'number', 'min="0" step="1000" placeholder="el general"') +
+        campo('Preventa', 'f-p ear', p.clp_early, 'number', 'min="0" step="1000"') +
+        campo('Preventa hasta', 'f-p eah', p.early_hasta, 'date') +
+        camposPago(ch.pagos, 'f-g') +
+      '</div>' +
+      area('Observaciones de esta fecha', 'f-obs', ch.observaciones,
+           'Ej: cupos limitados · incluye licencia por 30 días') +
+      '<p class="pista">Lo que dejes vacío hereda el valor general del curso.</p>' +
       '</div>';
   }
 
@@ -335,14 +363,25 @@ var HTML = `<!doctype html>
     }
 
     $('#cursos').innerHTML = DATOS.cursos.map(function (c) {
+      var p = c.precio || {};
       return '<section class="curso" data-curso="' + esc(c.id) + '">' +
-        '<header><h2>' + esc(c.titulo) + '</h2>' +
-          '<span class="tag">' + esc(c.software) + '</span></header>' +
-        '<div class="rej" style="margin-top:14px">' +
-          selector('Estado del curso', 'c-est', c.estado, ESTADOS_CURSO) +
+        '<header>' +
+          '<input class="c-tit titulo-input" aria-label="Nombre del curso" ' +
+            'value="' + esc(c.titulo) + '">' +
+          '<span class="tag">' + esc(c.software) + '</span>' +
+        '</header>' +
+        '<h3>Valores por defecto</h3>' +
+        '<div class="rej rej--compacta">' +
+          selector('Estado', 'c-est', c.estado, ESTADOS_CURSO) +
+          // El marcador dice lo que sale en la pagina si se deja vacio, no un
+          // monto de ejemplo: un numero en gris ahi se lee como precio puesto.
+          campo('Valor', 'c-p clp', p.clp, 'number', 'min="0" step="1000" placeholder="Consultar"') +
+          campo('Preventa', 'c-p ear', p.clp_early, 'number', 'min="0" step="1000"') +
+          campo('Preventa hasta', 'c-p eah', p.early_hasta, 'date') +
+          camposPago(c.pagos, 'c-g') +
         '</div>' +
-        '<h3>Precio general</h3>' + bloquePrecio(c.precio, 'c-p') +
-        '<h3>Links de pago generales</h3>' + bloquePagos(c.pagos, 'c-g') +
+        area('Observaciones del curso', 'c-obs', c.observaciones,
+             'Se muestra junto al valor en la página. Ej: incluye factura · descuentos para equipos') +
         '<h3>Fechas a la venta</h3>' +
         '<div data-fechas>' + (c.cohortes || []).map(bloqueFecha).join('') + '</div>' +
         '<button type="button" class="btn-mini" data-agregar>+ Agregar una fecha</button>' +
@@ -354,6 +393,11 @@ var HTML = `<!doctype html>
         var cont = $('[data-fechas]', b.closest('[data-curso]'));
         cont.insertAdjacentHTML('beforeend', bloqueFecha({}, cont.children.length));
         conectarBorrar();
+        // El cursor queda en el primer día de la edición recién creada: se
+        // sigue escribiendo sin buscar dónde quedó.
+        var nueva = cont.lastElementChild;
+        nueva.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        $('.f-ini', nueva).focus();
       });
     });
     conectarBorrar();
@@ -384,18 +428,19 @@ var HTML = `<!doctype html>
   }
 
   function leerPagos(cont, pre) {
-    return {
-      mercadopago_url: val('.' + pre + '.mp', cont),
-      flow_url: val('.' + pre + '.fl', cont),
-      paypal_url: val('.' + pre + '.pp', cont),
-      transferencia: true
-    };
+    var p = { mercadopago_url: '', flow_url: '', paypal_url: '', transferencia: true };
+    MEDIOS.forEach(function (m) {
+      p[MEDIO_CAMPO[m]] = val('.' + pre + '.' + MEDIO_CLASE[m], cont);
+    });
+    return p;
   }
 
   function recolectar() {
     var cursos = {};
     $$('[data-curso]').forEach(function (sec) {
       cursos[sec.getAttribute('data-curso')] = {
+        titulo: val('.c-tit', sec),
+        observaciones: val('.c-obs', sec),
         estado: val('.c-est', sec),
         precio: leerPrecio(sec, 'c-p'),
         pagos: leerPagos(sec, 'c-g'),
@@ -410,6 +455,7 @@ var HTML = `<!doctype html>
             cupos_disponibles: num('.f-cd', f),
             estado: val('.f-est', f),
             confirmada: true,
+            observaciones: val('.f-obs', f),
             precio: leerPrecio(f, 'f-p'),
             pagos: leerPagos(f, 'f-g')
           };
@@ -444,6 +490,7 @@ var HTML = `<!doctype html>
     return pedir('GET').then(function (r) {
       if (!r.datos.ok) throw r.datos;
       DATOS = r.datos;
+      if (Array.isArray(DATOS.medios) && DATOS.medios.length) MEDIOS = DATOS.medios;
       $('#puerta').hidden = true;
       $('#app').hidden = false;
       pintar();

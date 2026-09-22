@@ -22,10 +22,27 @@
 var CLAVE_KV = 'comercio';
 
 // Lo unico que el panel puede tocar de un curso. Todo lo demas es del repositorio.
-var CAMPOS_CURSO = ['estado', 'precio', 'pagos', 'cohortes'];
+var CAMPOS_CURSO = ['titulo', 'observaciones', 'estado', 'precio', 'pagos', 'cohortes'];
 
 var ESTADOS_CURSO   = ['inscripciones-abiertas', 'proximamente', 'cerrado'];
 var ESTADOS_COHORTE = ['abierta', 'ultimos-cupos', 'agotada', 'cerrado'];
+
+/**
+ * Medios de pago habilitados hoy.
+ *
+ * Mercado Pago y PayPal quedan fuera por ahora, por decision del dueno. No se
+ * borra el soporte: los campos siguen existiendo en el modelo y volver a
+ * activarlos es agregar el nombre a esta lista. Mientras esten fuera, el panel
+ * no muestra su casilla y lo que llegue con esos medios se descarta, asi que
+ * no puede quedar un boton vivo de un medio apagado.
+ */
+var MEDIOS_PAGO = ['flow'];
+
+var CAMPO_DE_MEDIO = {
+  flow: 'flow_url',
+  mercadopago: 'mercadopago_url',
+  paypal: 'paypal_url'
+};
 
 /* ---------- Lectura ---------- */
 
@@ -64,6 +81,10 @@ export function fusionar(base, cambios) {
   (base.cursos || []).forEach(function (curso) {
     var c = porCurso[curso.id];
     if (!c) return;
+    // El titulo vacio no pisa: asi un campo que quedo en blanco por descuido
+    // no deja el curso sin nombre.
+    if (c.titulo) curso.titulo = c.titulo;
+    if (typeof c.observaciones === 'string') curso.observaciones = c.observaciones;
     if (c.estado) curso.estado = c.estado;
     if (c.precio) curso.precio = Object.assign({}, curso.precio, c.precio);
     if (c.pagos)  curso.pagos  = Object.assign({}, curso.pagos,  c.pagos);
@@ -126,14 +147,19 @@ function limpiarPrecio(p) {
   };
 }
 
+/**
+ * Solo se conservan los links de los medios habilitados. Un medio apagado se
+ * guarda vacio aunque venga con valor: asi apagarlo apaga de verdad el boton,
+ * y no queda uno cobrando por un canal que se decidio no usar.
+ */
 function limpiarPagos(p) {
   p = p || {};
-  return {
-    mercadopago_url: enlace(p.mercadopago_url),
-    flow_url: enlace(p.flow_url),
-    paypal_url: enlace(p.paypal_url),
-    transferencia: p.transferencia !== false
-  };
+  var salida = { mercadopago_url: '', flow_url: '', paypal_url: '', transferencia: p.transferencia !== false };
+  MEDIOS_PAGO.forEach(function (medio) {
+    var campo = CAMPO_DE_MEDIO[medio];
+    if (campo) salida[campo] = enlace(p[campo]);
+  });
+  return salida;
 }
 
 function limpiarCohorte(ch, i) {
@@ -153,6 +179,7 @@ function limpiarCohorte(ch, i) {
     cupos_disponibles: entero(ch.cupos_disponibles, 999),
     estado: deLista(ch.estado, ESTADOS_COHORTE),
     confirmada: ch.confirmada !== false,
+    observaciones: texto(ch.observaciones, 300),
     precio: limpiarPrecio(ch.precio),
     pagos: limpiarPagos(ch.pagos)
   };
@@ -171,6 +198,8 @@ export function limpiarCambios(entrada, idsValidos) {
     var c = origen[id];
     if (!c) return;
     cursos[id] = {
+      titulo: texto(c.titulo, 140),
+      observaciones: texto(c.observaciones, 500),
       estado: deLista(c.estado, ESTADOS_CURSO),
       precio: limpiarPrecio(c.precio),
       pagos: limpiarPagos(c.pagos),
@@ -185,4 +214,4 @@ export function limpiarCambios(entrada, idsValidos) {
   return { actualizado: new Date().toISOString(), cursos: cursos };
 }
 
-export { CAMPOS_CURSO, ESTADOS_CURSO, ESTADOS_COHORTE };
+export { CAMPOS_CURSO, ESTADOS_CURSO, ESTADOS_COHORTE, MEDIOS_PAGO, CAMPO_DE_MEDIO };

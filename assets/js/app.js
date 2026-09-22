@@ -326,6 +326,14 @@
     // La fecha de lo que se está comprando, junto al valor. Sin fecha visible,
     // un precio es solo un número.
     $('#precioNota').textContent = (cohorte ? 'Edición del ' + rangoFechas(cohorte) + '. ' : '') + p.nota;
+
+    // Observaciones: texto libre que se escribe en el panel. Puede no haber,
+    // y entonces la caja no existe en vez de quedar vacía ocupando espacio.
+    var obs = $('#precioObs');
+    var textoObs = (c.observaciones || '').trim();
+    obs.textContent = textoObs;
+    obs.hidden = !textoObs;
+
     $('#precioIncluye').innerHTML = (c.incluye || []).slice(0, 5)
       .map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
 
@@ -486,6 +494,7 @@
             (sesiones ? esc(sesiones) + '<br>' : '') +
             (cupos ? esc(cupos) + '<br>' : '') +
             '<span class="cohorte__precio">' + esc(precio.texto) + '</span>' +
+            (ch.observaciones ? '<span class="cohorte__obs">' + esc(ch.observaciones) + '</span>' : '') +
           '</div>' +
           '<div class="cohorte__acciones">' +
             '<button type="button" class="btn-mini" data-ics="' + i + '">Descargar .ics</button>' +

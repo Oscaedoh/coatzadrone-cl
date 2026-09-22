@@ -937,3 +937,20 @@ body.con-banner .wa-flotante { display: none; }
 
 .cohorte--agotada { opacity: .62; }
 .cohorte--agotada .cohorte__precio { text-decoration: line-through; }
+
+/* Observaciones: lo que el dueño escribe en el panel para esa venta.
+   Va en caja aparte y no mezclado con la nota del precio, porque es texto
+   suyo y tiene que distinguirse de lo que calcula el sitio. */
+.precio-caja__obs {
+  font-size: .87rem;
+  line-height: 1.5;
+  color: var(--hueso);
+  background: rgba(221, 51, 48, .09);
+  border-left: 2px solid var(--rojo);
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  margin: -12px 0 24px;
+  white-space: pre-line;
+}
+
+.cohorte__obs { display: block; margin-top: 6px; color: var(--hueso); white-space: pre-line; }

@@ -40,7 +40,7 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 |---|---|---|
 | Hosting | Cloudflare (Worker con assets estáticos, no Pages) | Gratis sin límite de tráfico, incluye DNS para `.cl`, SSL y CDN |
 | Repositorio | GitHub, deploy automático por push | Sin costo, con historial y rollback |
-| Pagos | Mercado Pago Chile + Flow.cl | Los dos más reconocidos en Chile; links de pago sin backend |
+| Pagos | **Flow.cl** (Mercado Pago en pausa) | Reconocido en Chile y cubre Webpay; link de pago sin backend. El soporte de Mercado Pago sigue en el código, apagado en `MEDIOS_PAGO` |
 | Arquitectura | Estático, sin framework | No hay Node instalado en la máquina; cero mantención y cero costo |
 | Contenido | Un solo JSON | El dueño debe poder agregar cursos sin tocar código |
 | Idioma | Solo español | Alcance definido para la primera entrega |
@@ -112,8 +112,10 @@ Si el panel nunca se usó o KV no está, sale el archivo tal cual: el sitio nunc
 depende de esto para funcionar. El sitio cae al archivo directo si el endpoint
 falla, que es también lo que pasa en `localhost:8899`, donde no hay Worker.
 
-El panel solo puede tocar `estado`, `precio`, `pagos` y `cohortes`. El contenido
-redactado va por commit, con historial. Ver `docs/PANEL.md`.
+El panel solo puede tocar el nombre, las observaciones, `estado`, `precio`,
+`pagos` y `cohortes`. Hoy el unico medio de pago habilitado es Flow: ver
+`MEDIOS_PAGO` en `worker/catalogo.js`. El contenido largo
+va por commit, con historial. Ver `docs/PANEL.md`.
 
 Pendiente — ver `docs/CONFIGURAR.md`:
 
@@ -125,8 +127,8 @@ Pendiente — ver `docs/CONFIGURAR.md`:
    panel `/admin` queda cerrado
 5. ~~Crear el almacén KV y conectarlo~~ — ✅ hecho, binding `CONFIG`
 6. Armar la automatización de los correos 2 al 5 en Brevo
-7. Links de pago: **Botón de Pago** en Flow y **Link de pago** en Mercado Pago.
-   Ya no van al JSON — se pegan en `/admin`
+7. Link de pago: **Botón de Pago** en Flow. Ya no va al JSON — se pega en
+   `/admin`. Mercado Pago quedó en pausa por decisión del dueño
 8. IDs de GA4 y Píxel de Meta, antes de pautar
 9. Fecha del primer curso, antes de abrir el cobro
 10. Borrar en Brevo el contacto de prueba id 6 y la plantilla rota id 3

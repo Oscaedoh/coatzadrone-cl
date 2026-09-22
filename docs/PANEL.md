@@ -64,26 +64,49 @@ almacén, y sin tu cuenta no sirve de nada—, así que puede ir al repositorio.
 
 ## Cómo se usa
 
-Entras, escribes la clave y ves cada curso con tres bloques.
+Entras, escribes la clave y ves cada curso en una tarjeta.
 
-**Estado del curso.** *Inscripciones abiertas* o *Próximamente*. Cambia la
+**El nombre del curso** se edita donde se lee: el título de arriba es un campo.
+Se ve como un título hasta que lo tocas, para no tener el mismo dato en dos
+lados. Si lo dejas en blanco **no borra nada**: se queda el nombre anterior.
+
+**Valores por defecto.** Estado, valor, preventa y link de pago del curso. Se
+usan cuando una edición no define los suyos, así que evitan repetir lo mismo en
+cada fecha. El estado —*Inscripciones abiertas* o *Próximamente*— cambia la
 etiqueta de la tarjeta y si el botón invita a comprar o a dejar datos.
 
-**Precio y links generales.** El valor por defecto del curso. Se usa cuando una
-edición no define el suyo, así que sirve para no repetir lo mismo en cada fecha.
+**Observaciones del curso.** Texto libre que aparece en la página junto al valor,
+en un recuadro aparte. Para lo que no calza en ningún campo: *"Incluye factura"*,
+*"Descuentos para equipos de 3 o más"*. Respeta los saltos de línea.
 
-**Fechas a la venta.** Una tarjeta por edición. *Agregar una fecha* crea otra.
-Cada una tiene:
+**Fechas a la venta.** Una tarjeta por edición, con todo en una sola pasada:
 
-- primer y último día, y horario
-- cupos totales y disponibles
-- estado: *Abierta*, *Últimos cupos*, *Agotada* u *Oculta*
-- su propio precio y sus propios links de pago
+| | |
+|---|---|
+| Desde · Hasta · Horario | cuándo es |
+| Cupos · Disponibles · Estado | *Abierta*, *Últimos cupos*, *Agotada* u *Oculta* |
+| Valor · Preventa · Preventa hasta | qué cuesta esta edición |
+| Link de pago | dónde se paga esta edición |
+| Observaciones de esta fecha | sale junto a esa fecha en el calendario |
 
-> Si dejas el precio o los links de una edición vacíos, hereda los generales del
-> curso. Solo los llenas cuando esa fecha vale distinto.
+*Agregar una fecha* crea otra tarjeta y te deja el cursor en el primer día, para
+seguir escribiendo sin buscar dónde quedó.
+
+> Lo que dejes vacío en una edición hereda el valor general del curso. Solo lo
+> llenas cuando esa fecha vale distinto o se paga por otro lado.
 
 *Guardar y publicar* lo deja online al instante. No hay deploy de por medio.
+
+### Medios de pago habilitados
+
+Hoy solo **Flow / Webpay**, por decisión del dueño. Mercado Pago y PayPal están
+apagados: el panel no muestra su casilla y, si llegara un link de esos medios, se
+descarta al guardar. Así apagar un medio lo apaga de verdad y no queda un botón
+vivo cobrando por un canal que se decidió no usar.
+
+No se borró el soporte. Volver a encender uno es agregar su nombre a la lista
+`MEDIOS_PAGO` en `worker/catalogo.js` — una línea, y el panel dibuja la casilla
+solo.
 
 ---
 
@@ -106,9 +129,10 @@ sacarlo.
 
 ## Lo que el panel no deja hacer
 
-Por diseño solo puede tocar `estado`, `precio`, `pagos` y las fechas. **No** puede
-cambiar el temario, el instructor ni los textos: eso va por commit, con historial,
-porque es contenido que se redacta y se revisa, no un número que se ajusta.
+Por diseño solo puede tocar el nombre, las observaciones, `estado`, `precio`,
+`pagos` y las fechas. **No** puede cambiar el temario, el instructor ni los textos
+largos: eso va por commit, con historial, porque es contenido que se redacta y se
+revisa, no un dato que se ajusta.
 
 Todo lo que entra se valida antes de guardarse:
 
