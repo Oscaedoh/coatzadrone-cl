@@ -48,7 +48,10 @@ function json(cuerpo, estado) {
 
 export async function api(request, env) {
   if (!env.ADMIN_CLAVE) {
-    return json({ ok: false, error: 'sin_clave_configurada' }, 503);
+    // Mientras el panel no tenga clave, esta respuesta hace de diagnostico:
+    // dice si el almacen quedo enlazado, que de otro modo no hay forma de
+    // comprobar desde afuera. No revela nada: sin clave no se entra igual.
+    return json({ ok: false, error: 'sin_clave_configurada', kv: hayKV(env) }, 503);
   }
   if (!claveOk(env, request.headers.get('X-Clave'))) {
     // Un retardo fijo hace que probar claves a ciegas sea lentisimo.
