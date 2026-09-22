@@ -1,8 +1,15 @@
 # Cobrar los cursos: Mercado Pago y Flow
 
 El sitio es estático (no tiene servidor propio), así que el cobro se resuelve con
-**links de pago**: una URL que generas una vez por curso y que el alumno abre para
-pagar. No requiere programación ni mantención.
+**links de pago**: una URL que generas una vez por edición y que el alumno abre
+para pagar. No requiere programación ni mantención.
+
+> **Dónde se pegan esos links:** en el panel <https://coatzadrone.cl/admin>, en la
+> edición que corresponda. Ya no van a `data/cursos.json`. Ver [PANEL.md](PANEL.md).
+>
+> En Flow lo que necesitas es el **Botón de Pago** (reutilizable, se incrusta en
+> el sitio, acepta fecha de vencimiento), no el *Link de Pago*, que es de un solo
+> cliente y se manda por WhatsApp o correo.
 
 ---
 

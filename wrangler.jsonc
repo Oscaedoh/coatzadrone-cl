@@ -8,6 +8,8 @@
   //
   // El secreto BREVO_API_KEY no va aqui. Se define en el panel:
   // Workers & Pages -> coatzadrone-cl -> Settings -> Variables and Secrets.
+  // Tampoco va aqui ADMIN_CLAVE, la clave del panel /admin. Mismo sitio,
+  // mismo tipo Secret.
   "name": "coatzadrone-cl",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
@@ -16,4 +18,23 @@
     "binding": "ASSETS",
     "run_worker_first": true
   }
+
+  // ---------------------------------------------------------------------
+  // FALTA CONECTAR EL ALMACEN DEL PANEL
+  //
+  // Los precios y fechas que se editan en /admin se guardan en Cloudflare KV.
+  // Mientras no exista el almacen, el sitio funciona igual pero el panel no
+  // puede guardar: avisa y deja copiar los datos.
+  //
+  // Para activarlo, en el panel de Cloudflare:
+  //   Storage & Databases -> KV -> Create -> nombre: coatzadrone-comercio
+  // Eso entrega un id. Con ese id, se descomenta esto y se hace push:
+  //
+  //   ,"kv_namespaces": [
+  //     { "binding": "CONFIG", "id": "AQUI_EL_ID" }
+  //   ]
+  //
+  // El id no es un secreto: solo identifica el almacen y sin la cuenta no
+  // sirve de nada. Por eso puede vivir en este archivo, que es publico.
+  // ---------------------------------------------------------------------
 }

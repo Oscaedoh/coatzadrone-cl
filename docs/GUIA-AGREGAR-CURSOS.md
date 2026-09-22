@@ -1,7 +1,16 @@
 # Cómo agregar o editar un curso
 
-Todos los cursos viven en `data/cursos.json`. **No se toca HTML, CSS ni JavaScript.**
-El sitio se arma solo a partir de ese archivo.
+El **contenido** de los cursos vive en `data/cursos.json`: temario, instructor,
+textos, imágenes. **No se toca HTML, CSS ni JavaScript.**
+
+> **Los precios y las fechas ya no se editan aquí.** Van en el panel
+> <https://coatzadrone.cl/admin>, que publica al instante y sin commit. Los campos
+> `precio`, `pagos`, `estado` y `cohortes` de este archivo quedan solo como valor
+> inicial: si el panel tiene algo cargado para ese curso, manda el panel.
+> Ver [PANEL.md](PANEL.md).
+>
+> Sigue en el JSON todo lo que se redacta y se revisa, porque conviene que quede
+> con historial. Un curso nuevo se crea acá; sus fechas y su precio, en el panel.
 
 ---
 

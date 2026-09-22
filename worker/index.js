@@ -1,15 +1,24 @@
 /**
  * Worker de coatzadrone.cl
  *
- * Hace tres cosas, en este orden:
- *   1. Atiende POST /api/lead, que guarda el lead en Brevo. Va primero para
- *      que siga funcionando aunque el sitio este en mantenimiento
- *   2. Si el sitio esta en mantenimiento, responde la pagina de aviso
- *   3. Para todo lo demas, entrega el archivo estatico que corresponda
+ * Atiende, en este orden:
+ *   1. POST /api/lead      — guarda el lead en Brevo
+ *   2. GET  /api/cursos     — el catalogo: contenido del repo + precios y
+ *                             fechas editados en el panel
+ *   3. /admin y /api/admin/* — el panel comercial
+ *   4. Si el sitio esta en mantenimiento, la pagina de aviso
+ *   5. Para todo lo demas, el archivo estatico que corresponda
  *
- * La clave de Brevo va como secreto cifrado en Cloudflare (BREVO_API_KEY).
- * Nunca en este archivo: el repositorio es publico.
+ * Los cuatro primeros van ANTES del chequeo de mantenimiento a proposito: se
+ * sigue captando leads y se puede seguir preparando el catalogo con el sitio
+ * publico abajo.
+ *
+ * Las claves (BREVO_API_KEY, ADMIN_CLAVE) van como secretos cifrados en
+ * Cloudflare. Nunca en este archivo: el repositorio es publico.
  */
+
+import * as catalogo from './catalogo.js';
+import * as admin from './admin.js';
 
 var BREVO = 'https://api.brevo.com/v3';
 
@@ -64,6 +73,24 @@ export default {
         return json({ ok: false, error: 'metodo_no_permitido' }, 405);
       }
       return manejarLead(request, env);
+    }
+
+    if (url.pathname === '/api/cursos') {
+      try {
+        return await catalogo.entregar(env);
+      } catch (e) {
+        // Si algo falla al fusionar, que el sitio siga cargando: se entrega el
+        // archivo del repositorio tal cual y se pierden solo los cambios del panel.
+        return env.ASSETS.fetch(new URL('/data/cursos.json', url).toString());
+      }
+    }
+
+    if (url.pathname === '/api/admin/datos') {
+      return admin.api(request, env);
+    }
+
+    if (url.pathname === '/admin' || url.pathname === '/admin/') {
+      return admin.pagina();
     }
 
     if (enMantenimiento(env)) {

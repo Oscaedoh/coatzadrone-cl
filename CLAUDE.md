@@ -95,18 +95,43 @@ Resuelto:
   `Leads - Cursos Pix4D` y `Alumnos`, 7 atributos propios y la secuencia de bienvenida
   de 5 plantillas
 
+## El catálogo: contenido vs. comercio — 22 de septiembre de 2026
+
+Lo que se vende **no es el curso, es la edición**: una fecha concreta con su
+cupo, su precio y su propio link de pago. Un curso puede tener varias al año.
+
+Por eso el catálogo está partido en dos mitades con ritmos distintos:
+
+| | Dónde vive | Cómo se cambia |
+|---|---|---|
+| Temario, instructor, textos, fotos | `data/cursos.json` | commit + push |
+| Precio, fechas, cupos, links de pago | Cloudflare KV | en `/admin`, al instante |
+
+`GET /api/cursos` entrega las dos unidas, con KV mandando por sobre el archivo.
+Si el panel nunca se usó o KV no está, sale el archivo tal cual: el sitio nunca
+depende de esto para funcionar. El sitio cae al archivo directo si el endpoint
+falla, que es también lo que pasa en `localhost:8899`, donde no hay Worker.
+
+El panel solo puede tocar `estado`, `precio`, `pagos` y `cohortes`. El contenido
+redactado va por commit, con historial. Ver `docs/PANEL.md`.
+
 Pendiente — ver `docs/CONFIGURAR.md`:
 
 1. En el panel de Cloudflare: activar **Always Use HTTPS** (la redirección
    `www` → raíz ya quedó creada y funcionando)
 2. ~~Cargar el secreto `BREVO_API_KEY`~~ — ✅ hecho, `/api/lead` operativo
-3. Crear la lista de novedades en Brevo y cargarla como `LISTA_NOVEDADES`
-   (ver `docs/FORMULARIO.md`), para separar al banner de la secuencia de venta
-4. Armar la automatización de los correos 2 al 5 en Brevo
-5. Links de pago de Mercado Pago y Flow → `data/cursos.json`
-6. IDs de GA4 y Píxel de Meta, antes de pautar
-7. Fecha del primer curso, antes de abrir el cobro
-8. Borrar los contactos de prueba en Brevo (ids 4 y 5)
+3. ~~Lista de novedades del banner~~ — ✅ hecha, es la id 7
+4. **Crear el secreto `ADMIN_CLAVE`** en Cloudflare (tipo *Secret*). Sin él el
+   panel `/admin` queda cerrado
+5. **Crear el almacén KV** (*Storage & Databases* → *KV* → `coatzadrone-comercio`)
+   y pasar el id para conectarlo en `wrangler.jsonc`. Sin él el panel abre y
+   deja editar, pero no puede guardar
+6. Armar la automatización de los correos 2 al 5 en Brevo
+7. Links de pago: **Botón de Pago** en Flow y **Link de pago** en Mercado Pago.
+   Ya no van al JSON — se pegan en `/admin`
+8. IDs de GA4 y Píxel de Meta, antes de pautar
+9. Fecha del primer curso, antes de abrir el cobro
+10. Borrar en Brevo el contacto de prueba id 6 y la plantilla rota id 3
 
 ## Siguientes etapas previstas
 

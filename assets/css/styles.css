@@ -922,3 +922,18 @@ body.con-banner .wa-flotante { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .banner { transition: none; }
 }
+
+/* ---------- Fechas a la venta ---------- */
+/* El precio va junto a la fecha porque es lo que de verdad se compra: una
+   edicion concreta, no el curso en abstracto. */
+.cohorte__precio {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  color: var(--blanco);
+  letter-spacing: .01em;
+}
+
+.cohorte--agotada { opacity: .62; }
+.cohorte--agotada .cohorte__precio { text-decoration: line-through; }

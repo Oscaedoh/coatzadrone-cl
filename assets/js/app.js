@@ -23,17 +23,60 @@
     return '$' + Number(n).toLocaleString('es-CL') + ' CLP';
   }
 
+  function hoyISO() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /* ---------- Qué se está vendiendo ---------- */
+
+  /**
+   * Lo que se compra no es "el curso" en abstracto: es una edición con fecha,
+   * cupo y precio propios. Por eso el precio y los botones de pago salen de la
+   * edición vigente y solo heredan los del curso cuando ella no los define.
+   *
+   * Edición vigente = la primera visible que todavía no termina.
+   */
+  function cohorteVigente(curso) {
+    var hoy = hoyISO();
+    return (curso.cohortes || [])
+      .filter(function (ch) {
+        return ch.estado !== 'cerrado' && (ch.fin || ch.inicio) >= hoy;
+      })
+      .sort(function (a, b) { return a.inicio < b.inicio ? -1 : 1; })[0] || null;
+  }
+
+  function precioDe(curso, cohorte) {
+    var p = (cohorte && cohorte.precio) || {};
+    return (p.clp || p.clp_early) ? p : (curso.precio || {});
+  }
+
+  function pagosDe(curso, cohorte) {
+    var g = (cohorte && cohorte.pagos) || {};
+    return (g.mercadopago_url || g.flow_url || g.paypal_url) ? g : (curso.pagos || {});
+  }
+
+  // El monto que se cobra hoy, o null si todavía no hay valor publicado.
+  function montoVigente(curso, cohorte) {
+    var p = precioDe(curso, cohorte);
+    return enPreventa(p) ? p.clp_early : (p.clp || null);
+  }
+
+  // La preventa vence sola. Sin esto, un descuento quedaría vigente para siempre.
+  function enPreventa(p) {
+    return !!(p.clp_early && p.clp && (!p.early_hasta || p.early_hasta >= hoyISO()));
+  }
+
   // Devuelve { texto, nota } listos para mostrar
-  function textoPrecio(curso) {
-    var p = curso.precio || {};
-    if (p.clp_early && p.clp) {
+  function textoPrecio(curso, cohorte) {
+    var p = precioDe(curso, cohorte);
+    if (enPreventa(p)) {
       return {
         texto: precioCLP(p.clp_early),
         nota: 'Precio preventa. Valor general ' + precioCLP(p.clp) +
               (p.early_hasta ? ' · Preventa hasta el ' + fechaLarga(p.early_hasta) : '')
       };
     }
-    if (p.clp) return { texto: precioCLP(p.clp), nota: p.nota || '' };
+    if (p.clp) return { texto: precioCLP(p.clp), nota: p.nota || (curso.precio || {}).nota || '' };
     if (p.usd) {
       return {
         texto: 'Consultar',
@@ -208,9 +251,16 @@
 
     cont.innerHTML = lista.map(function (c) {
       var abierto = c.estado === 'inscripciones-abiertas';
-      var p = textoPrecio(c);
-      var cohorte = (c.cohortes || [])[0];
+      var cohorte = cohorteVigente(c);
+      var p = textoPrecio(c, cohorte);
       var meta = [c.modalidad, c.duracion, c.nivel].filter(Boolean);
+
+      // Con link de pago cargado, la tarjeta lleva directo al checkout. Sin él,
+      // al formulario: es el mismo botón cambiando de destino según haya o no
+      // algo que comprar de verdad.
+      var pagos = pagosDe(c, cohorte);
+      var alCheckout = abierto && cohorte && cohorte.estado !== 'agotada' &&
+        (pagos.mercadopago_url || pagos.flow_url || pagos.paypal_url || '');
 
       return '' +
         '<article class="curso-card">' +
@@ -232,21 +282,29 @@
               '<div class="curso-card__precio">' + esc(p.texto) +
                 '<small>' + (abierto ? 'Por participante' : 'Valor por definir') + '</small>' +
               '</div>' +
-              '<a class="btn ' + (abierto ? 'btn--primario' : 'btn--fantasma') + '" href="' +
-                (abierto ? '#inscripcion' : '#inscripcion') + '" data-curso="' + esc(c.id) + '">' +
-                (abierto ? 'Inscribirme' : 'Avísenme') +
-              '</a>' +
+              (alCheckout
+                ? '<a class="btn btn--primario" href="' + esc(alCheckout) + '" target="_blank" ' +
+                  'rel="noopener" data-curso="' + esc(c.id) + '" data-directo="1">Inscribirme</a>'
+                : '<a class="btn ' + (abierto ? 'btn--primario' : 'btn--fantasma') + '" ' +
+                  'href="#inscripcion" data-curso="' + esc(c.id) + '">' +
+                  (abierto ? 'Quiero inscribirme' : 'Avísenme') + '</a>') +
             '</div>' +
           '</div>' +
         '</article>';
     }).join('');
 
-    // Al pulsar el CTA de una tarjeta, preseleccionamos ese curso en el formulario
     $$('[data-curso]', cont).forEach(function (btn) {
       btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-curso');
+        if (btn.getAttribute('data-directo')) {
+          evento('iniciar_pago', { curso: id, medio: 'tarjeta_catalogo' });
+          if (typeof window.fbq === 'function') window.fbq('track', 'InitiateCheckout');
+          return;
+        }
+        // Sin pago directo el botón baja al formulario: dejamos el curso puesto.
         var sel = $('#curso');
-        if (sel) sel.value = btn.getAttribute('data-curso');
-        evento('click_cta_curso', { curso: btn.getAttribute('data-curso') });
+        if (sel) sel.value = id;
+        evento('click_cta_curso', { curso: id });
       });
     });
   }
@@ -262,19 +320,22 @@
     $('#destacadoResultados').innerHTML = (c.resultados || [])
       .map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
 
-    var p = textoPrecio(c);
+    var cohorte = cohorteVigente(c);
+    var p = textoPrecio(c, cohorte);
     $('#precioMonto').textContent = p.texto;
-    $('#precioNota').textContent = p.nota;
+    // La fecha de lo que se está comprando, junto al valor. Sin fecha visible,
+    // un precio es solo un número.
+    $('#precioNota').textContent = (cohorte ? 'Edición del ' + rangoFechas(cohorte) + '. ' : '') + p.nota;
     $('#precioIncluye').innerHTML = (c.incluye || []).slice(0, 5)
       .map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
 
-    renderBotonesPago(c);
+    renderBotonesPago(c, cohorte);
   }
 
-  // Si hay links de pago cargados en el JSON, se muestran como botones de pago
+  // Si la edición vigente tiene links de pago, se muestran como botones de pago
   // directo. Si no, se mantiene el flujo de reserva por formulario.
-  function renderBotonesPago(c) {
-    var pagos = c.pagos || {};
+  function renderBotonesPago(c, cohorte) {
+    var pagos = pagosDe(c, cohorte);
     var cont = $('#botonesPago');
     if (!cont) return;
 
@@ -284,7 +345,12 @@
       { url: pagos.paypal_url,      texto: 'Pagar con PayPal',        medio: 'paypal' }
     ].filter(function (o) { return o.url; });
 
-    if (!opciones.length) { cont.hidden = true; return; }
+    // Una edición agotada no se cobra aunque el link siga vivo: cobrar un cupo
+    // que no existe es una devolución seguida de un cliente perdido.
+    if (!opciones.length || (cohorte && cohorte.estado === 'agotada')) {
+      cont.hidden = true;
+      return;
+    }
 
     cont.hidden = false;
     cont.innerHTML = opciones.map(function (o, i) {
@@ -391,26 +457,51 @@
 
     cont.innerHTML = chs.map(function (ch, i) {
       var sesiones = (ch.sesiones || []).join(' · ');
-      var cupos = ch.cupos_disponibles != null
-        ? ch.cupos_disponibles + ' cupos disponibles de ' + ch.cupos_totales
-        : '';
+      var agotada = ch.estado === 'agotada';
+      var cupos = agotada
+        ? 'Sin cupos disponibles'
+        : (ch.cupos_disponibles != null
+            ? ch.cupos_disponibles + ' cupos disponibles' +
+              (ch.cupos_totales ? ' de ' + ch.cupos_totales : '')
+            : '');
+
+      var pagos = pagosDe(c, ch);
+      var link = agotada ? '' : (pagos.mercadopago_url || pagos.flow_url || pagos.paypal_url || '');
+      var precio = textoPrecio(c, ch);
+
+      var cta = agotada
+        ? '<a class="btn btn--fantasma" href="#inscripcion" style="padding:9px 20px;font-size:.7rem">Avísenme de la próxima</a>'
+        : link
+          ? '<a class="btn btn--primario" href="' + esc(link) + '" target="_blank" rel="noopener" ' +
+            'data-comprar="' + i + '" style="padding:9px 20px;font-size:.7rem">Inscribirme y pagar</a>'
+          : '<a class="btn btn--primario" href="#inscripcion" style="padding:9px 20px;font-size:.7rem">Reservar cupo</a>';
+
       return '' +
-        '<div class="cohorte">' +
+        '<div class="cohorte' + (agotada ? ' cohorte--agotada' : '') + '">' +
           '<div class="cohorte__fecha">' + esc(rangoFechas(ch)) +
             (ch.confirmada === false ? '<div style="font-family:var(--texto);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gris);margin-top:6px">Fecha referencial</div>' : '') +
           '</div>' +
           '<div class="cohorte__detalle">' +
             (ch.horario ? '<strong>' + esc(ch.horario) + '</strong><br>' : '') +
             (sesiones ? esc(sesiones) + '<br>' : '') +
-            (cupos ? esc(cupos) : '') +
+            (cupos ? esc(cupos) + '<br>' : '') +
+            '<span class="cohorte__precio">' + esc(precio.texto) + '</span>' +
           '</div>' +
           '<div class="cohorte__acciones">' +
             '<button type="button" class="btn-mini" data-ics="' + i + '">Descargar .ics</button>' +
             '<a class="btn-mini" href="' + esc(enlaceGoogleCalendar(c, ch)) + '" target="_blank" rel="noopener">Google Calendar</a>' +
-            '<a class="btn btn--primario" href="#inscripcion" style="padding:9px 20px;font-size:.7rem">Reservar</a>' +
+            cta +
           '</div>' +
         '</div>';
     }).join('');
+
+    $$('[data-comprar]', cont).forEach(function (a) {
+      a.addEventListener('click', function () {
+        var ch = chs[+a.getAttribute('data-comprar')];
+        evento('iniciar_pago', { curso: c.id, cohorte: ch.id, medio: 'calendario' });
+        if (typeof window.fbq === 'function') window.fbq('track', 'InitiateCheckout');
+      });
+    });
 
     $$('[data-ics]', cont).forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -469,8 +560,46 @@
     $('#anio').textContent = new Date().getFullYear();
   }
 
+  /**
+   * Cada edición se declara como una oferta con precio y disponibilidad. Es lo
+   * que hace que Google muestre el curso con su valor y sus fechas en los
+   * resultados, en vez de un enlace sin más: tratado como producto, no como
+   * página.
+   */
+  function ofertaDe(c, ch) {
+    var monto = montoVigente(c, ch);
+    if (!monto) return undefined;
+    var pagos = pagosDe(c, ch);
+    return {
+      '@type': 'Offer',
+      category: 'Paid',
+      price: monto,
+      priceCurrency: 'CLP',
+      availability: (ch && ch.estado === 'agotada')
+        ? 'https://schema.org/SoldOut'
+        : 'https://schema.org/InStock',
+      url: pagos.mercadopago_url || pagos.flow_url || 'https://coatzadrone.cl/#destacado',
+      validThrough: ch ? (ch.fin || ch.inicio) : undefined
+    };
+  }
+
   function inyectarSchema(c) {
-    var cohorte = (c.cohortes || [])[0];
+    var vigente = cohorteVigente(c);
+    var instancias = (c.cohortes || [])
+      .filter(function (ch) { return ch.estado !== 'cerrado'; })
+      .map(function (ch) {
+        return {
+          '@type': 'CourseInstance',
+          courseMode: 'online',
+          courseWorkload: 'PT12H',
+          startDate: ch.inicio,
+          endDate: ch.fin || ch.inicio,
+          offers: ofertaDe(c, ch),
+          instructor: c.instructor && c.instructor.nombre
+            ? { '@type': 'Person', name: c.instructor.nombre } : undefined
+        };
+      });
+
     var schema = {
       '@context': 'https://schema.org',
       '@type': 'Course',
@@ -482,15 +611,8 @@
         name: 'CoatzaDrone Chile',
         url: 'https://coatzadrone.cl/'
       },
-      hasCourseInstance: cohorte ? [{
-        '@type': 'CourseInstance',
-        courseMode: 'online',
-        courseWorkload: 'PT12H',
-        startDate: cohorte.inicio,
-        endDate: cohorte.fin,
-        instructor: c.instructor && c.instructor.nombre
-          ? { '@type': 'Person', name: c.instructor.nombre } : undefined
-      }] : undefined
+      offers: ofertaDe(c, vigente),
+      hasCourseInstance: instancias.length ? instancias : undefined
     };
 
     var faq = {
@@ -849,11 +971,25 @@
 
   /* ---------- Arranque ---------- */
 
-  fetch('data/cursos.json', { cache: 'no-cache' })
-    .then(function (r) {
+  /**
+   * El catálogo viene de /api/cursos, que mezcla el contenido del repositorio
+   * con los precios y fechas editados en el panel. Si ese endpoint no responde
+   * —servidor local sin Worker, o una caída— se lee el archivo directo: la
+   * página se ve completa igual, con los valores del último despliegue.
+   */
+  function cargarCatalogo() {
+    function leerJson(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    })
+    }
+    return fetch('/api/cursos', { cache: 'no-store' })
+      .then(leerJson)
+      .catch(function () {
+        return fetch('data/cursos.json', { cache: 'no-cache' }).then(leerJson);
+      });
+  }
+
+  cargarCatalogo()
     .then(function (json) {
       DATOS = json;
       cargarAnalitica();
