@@ -38,7 +38,7 @@ Sitio estático sin build: HTML + CSS + JS plano. Todo el contenido se maneja de
 
 | Tema | Decisión | Por qué |
 |---|---|---|
-| Hosting | Cloudflare Pages | Gratis sin límite de tráfico, incluye DNS para `.cl`, SSL y CDN |
+| Hosting | Cloudflare (Worker con assets estáticos, no Pages) | Gratis sin límite de tráfico, incluye DNS para `.cl`, SSL y CDN |
 | Repositorio | GitHub, deploy automático por push | Sin costo, con historial y rollback |
 | Pagos | Mercado Pago Chile + Flow.cl | Los dos más reconocidos en Chile; links de pago sin backend |
 | Arquitectura | Estático, sin framework | No hay Node instalado en la máquina; cero mantención y cero costo |
@@ -67,16 +67,19 @@ Resuelto:
 - WhatsApp real: +56 9 5704 2650
 - Precio del workshop Pix4Dfields: **$275.000 CLP fijo, sin preventa** (decisión del dueño)
 - Calendario en "Por anunciar", captando leads con prioridad de cupo
+- Correo `contacto@coatzadrone.cl` **operativo**: recibe por Cloudflare Email Routing
+  (reenvío a `coatzachile@gmail.com`) y envía desde Gmail vía SMTP de Brevo
+- Brevo montado: remitente verificado, dominio autenticado (DKIM + DMARC), listas
+  `Leads - Cursos Pix4D` y `Alumnos`, 7 atributos propios y la secuencia de bienvenida
+  de 5 plantillas
 
 Pendiente — ver `docs/CONFIGURAR.md`:
 
 1. En el panel de Cloudflare: activar **Always Use HTTPS** y crear la regla de
    redirección `www` → raíz (hoy ambos sirven contenido, duplicado para SEO)
-2. Correo: el dueño eligió **Email Routing + responder desde Gmail**.
-   `contacto@coatzadrone.cl` aún no existe y hoy rebota
-3. Endpoint del formulario (hoy deriva a WhatsApp, sin registro ordenado)
-4. IDs de GA4 y Píxel de Meta, antes de pautar
-5. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
+2. Endpoint del formulario (hoy deriva a WhatsApp, sin registro ordenado)
+3. IDs de GA4 y Píxel de Meta, antes de pautar
+4. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
 
 ## Siguientes etapas previstas
 

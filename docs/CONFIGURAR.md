@@ -8,7 +8,7 @@ Todo se edita en **un solo archivo**: `data/cursos.json`.
 | # | Dato | Estado |
 |---|---|---|
 | 1 | Teléfono de WhatsApp | ✅ +56 9 5704 2650 |
-| 2 | Correo de contacto | ⚠️ `contacto@coatzadrone.cl` aún no existe |
+| 2 | Correo de contacto | ✅ `contacto@coatzadrone.cl` recibe y envía |
 | 3 | Precio en CLP | ✅ $275.000 fijo, sin preventa |
 | 4 | Fechas del curso | ✅ deliberadamente en "Por anunciar" |
 | 5 | Formulario a correo | ❌ pendiente |
@@ -29,22 +29,25 @@ Chile es `56` y el móvil parte con `9`. Ejemplo: +56 9 1234 5678 → `569123456
 
 ---
 
-## 2. Correo de contacto — ⚠️ atención
+## 2. Correo de contacto — ✅ operativo
 
 ```json
   "email": "contacto@coatzadrone.cl",
 ```
 
-Esa dirección aparece en el footer y en el formulario, **pero la casilla todavía no
-existe**: el dominio aún no está conectado. Hoy, un correo enviado ahí rebota.
+La casilla funciona en los dos sentidos:
 
-Dos salidas:
+- **Recibe** por **Cloudflare Email Routing**, que reenvía todo a `coatzachile@gmail.com`.
+- **Envía** desde ese mismo Gmail, con *Cuentas e importación → Enviar como*, usando el
+  relay SMTP de Brevo (`smtp-relay.brevo.com`, puerto 587, TLS).
 
-- **Provisoria:** poner un correo que sí revises (Gmail, por ejemplo) hasta que el
-  dominio esté operativo.
-- **Definitiva:** al conectar `coatzadrone.cl` a Cloudflare, activar **Email Routing**
-  (gratis) para que `contacto@coatzadrone.cl` reenvíe a tu Gmail. Ver
-  [DEPLOY-CLOUDFLARE.md](DEPLOY-CLOUDFLARE.md#correo-del-dominio-opcional-pero-recomendado).
+> Para que Gmail pudiera autenticarse hubo que **desactivar "Bloquear direcciones IP
+> desconocidas"** en Brevo (*tu cuenta → Seguridad → IPs autorizadas*). Gmail envía desde
+> los servidores de Google, cuyas IP rotan, así que la lista blanca es incompatible con
+> este flujo. Síntoma si alguien vuelve a activarlo: `525 5.7.1 Unauthorized IP address`.
+
+La clave SMTP **no va en este repositorio** — es pública. Vive solo en la configuración
+de Gmail; si se filtra, se revoca y se genera otra en Brevo → *SMTP & API → SMTP*.
 
 ---
 
