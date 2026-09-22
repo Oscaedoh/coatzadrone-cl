@@ -1,6 +1,7 @@
 # El formulario y la captación de leads
 
-Qué pasa cuando alguien aprieta **Enviar inscripción** en `coatzadrone.cl`.
+Qué pasa cuando alguien deja sus datos en `coatzadrone.cl`. Hay tres caminos según
+la intención de la persona — ver "Los tres caminos de conversión" al final.
 
 ```
 Formulario  →  POST /api/lead  →  Worker  →  Brevo
@@ -12,6 +13,9 @@ Formulario  →  POST /api/lead  →  Worker  →  Brevo
 El Worker vive en `worker/index.js`. No sirve el sitio: los archivos estáticos se
 entregan antes de que el código se ejecute, así que solo corre para rutas que no
 existen como archivo. Hoy la única es `/api/lead`.
+
+Durante el mantenimiento `/api/lead` sigue vivo: se atiende antes del chequeo,
+para poder probar los formularios con el sitio caído.
 
 ---
 
@@ -150,3 +154,52 @@ Los logs en vivo están en Cloudflare → `coatzadrone-cl` → **Logs**.
 > El bloqueo de IPs desconocidas de Brevo (*cuenta → Seguridad → IPs autorizadas*)
 > tiene que seguir **desactivado**. El Worker sale desde la red de Cloudflare, con
 > IP variable, igual que Gmail. Ver [CONFIGURAR.md](CONFIGURAR.md#2-correo-de-contacto--operativo).
+
+---
+
+## Los tres caminos de conversión
+
+Desde el 22 de septiembre de 2026 la landing no trata igual a todos los visitantes.
+Hay tres caminos según qué tan decidida viene la persona:
+
+| Intención | Camino | Dónde cae | Qué correo recibe |
+|---|---|---|---|
+| "Lo compro" | Botones de pago → checkout | (pendiente) | el del medio de pago |
+| "Cuéntenme más" | Formulario | `Leads - Cursos Pix4D` | bienvenida + aviso interno |
+| "Solo avísenme" | Banner del pie | lista de novedades | confirmación corta |
+
+### El botón de pago
+
+Aparece solo cuando `data/cursos.json` tiene links en `pagos`. Al aparecer, el CTA
+de contacto se degrada automáticamente a *"Prefiero que me contacten"* en estilo
+secundario, para que comprar sea el camino evidente. Sin links, todo vuelve al
+comportamiento anterior. No hay que tocar código.
+
+### El banner de novedades
+
+Barra fija al pie que pide solo el correo. **No aparece al cargar la página**: se
+muestra al 50% de scroll o cuando el mouse sale por arriba de la ventana. Google
+penaliza en móvil los avisos que tapan el contenido de entrada, y además molesta
+antes de que la persona haya visto algo que le interese.
+
+Quien lo cierra no lo vuelve a ver en 30 días; quien se suscribe, nunca más. Se
+guarda en `localStorage`, así que es por navegador.
+
+#### Falta crear su lista en Brevo
+
+Hay que crearla a mano — el conector no puede — y decirle al Worker cuál es:
+
+1. Brevo → *Contacts* → *Lists* → **Create a list**, por ejemplo
+   `Novedades - Suscriptores`. Anota el id que queda en la URL.
+2. Cloudflare → `coatzadrone-cl` → *Settings* → *Variables and Secrets* → **Add**,
+   tipo **Text** (no es un secreto), nombre `LISTA_NOVEDADES`, valor el id.
+3. **Deploy**.
+
+Mientras no exista, esos contactos caen en la lista de leads, pero **igual sin la
+secuencia de venta**, que es lo que de verdad importa separar: quien deja su correo
+en un banner no pidió que le ofrecieran un curso de $275.000. Si recibe esa
+secuencia, marca spam, y eso quema la reputación del dominio para **todos** tus
+envíos, no solo para esos.
+
+Su correo de confirmación es la plantilla **`Banner · Confirmación de novedades`**
+(id 7), corta y sin venta.

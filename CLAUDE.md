@@ -80,7 +80,7 @@ gráfica de la marca, WhatsApp, correo y el enlace al directorio de Pix4D.
 
 - **Sitio en producción: <https://coatzadrone.cl>**
 - Repositorio: <https://github.com/Oscaedoh/coatzadrone-cl> (público, rama `main`)
-- Deploy alterno: <https://coatzadrone-cl.oscaedoh.workers.dev> — republica en cada push
+- Deploy: cada `git push` a `main` republica el Worker automáticamente
 - Dominio registrado **directo en NIC.cl**, delegado a Cloudflare
   (`bart.ns.cloudflare.com` / `hope.ns.cloudflare.com`)
 
@@ -97,12 +97,16 @@ Resuelto:
 
 Pendiente — ver `docs/CONFIGURAR.md`:
 
-1. En el panel de Cloudflare: activar **Always Use HTTPS** y crear la regla de
-   redirección `www` → raíz (hoy ambos sirven contenido, duplicado para SEO)
-2. Cargar el secreto `BREVO_API_KEY` en Cloudflare para activar `/api/lead`
-   (ver `docs/FORMULARIO.md`), y armar la automatizacion de los correos 2 al 5
-3. IDs de GA4 y Píxel de Meta, antes de pautar
-4. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
+1. En el panel de Cloudflare: activar **Always Use HTTPS** (la redirección
+   `www` → raíz ya quedó creada y funcionando)
+2. ~~Cargar el secreto `BREVO_API_KEY`~~ — ✅ hecho, `/api/lead` operativo
+3. Crear la lista de novedades en Brevo y cargarla como `LISTA_NOVEDADES`
+   (ver `docs/FORMULARIO.md`), para separar al banner de la secuencia de venta
+4. Armar la automatización de los correos 2 al 5 en Brevo
+5. Links de pago de Mercado Pago y Flow → `data/cursos.json`
+6. IDs de GA4 y Píxel de Meta, antes de pautar
+7. Fecha del primer curso, antes de abrir el cobro
+8. Borrar los contactos de prueba en Brevo (ids 4 y 5)
 
 ## Siguientes etapas previstas
 
