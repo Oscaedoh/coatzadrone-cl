@@ -5,7 +5,7 @@
     "whatsapp": "56957042650",
     "whatsapp_texto": "Hola, quiero información sobre los cursos Pix4D de CoatzaDrone Chile",
     "email": "contacto@coatzadrone.cl",
-    "formulario_endpoint": "https://formspree.io/f/TU_ID_AQUI",
+    "formulario_endpoint": "/api/lead",
     "pix4d_directorio_url": "https://training.pix4d.com/pages/locate-a-pix4d-trusted-training-center",
     "ga4_id": "",
     "meta_pixel_id": ""

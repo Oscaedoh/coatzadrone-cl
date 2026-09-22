@@ -1,0 +1,12 @@
+# Archivos del repositorio que no son parte del sitio publicado.
+# Sin esto, Cloudflare serviria la documentacion y el codigo del Worker
+# como si fueran paginas.
+worker/
+docs/
+scripts/
+marca/
+CLAUDE.md
+README.md
+wrangler.jsonc
+.assetsignore
+.gitignore

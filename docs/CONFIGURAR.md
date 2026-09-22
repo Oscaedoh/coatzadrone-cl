@@ -11,7 +11,7 @@ Todo se edita en **un solo archivo**: `data/cursos.json`.
 | 2 | Correo de contacto | ✅ `contacto@coatzadrone.cl` recibe y envía |
 | 3 | Precio en CLP | ✅ $275.000 fijo, sin preventa |
 | 4 | Fechas del curso | ✅ deliberadamente en "Por anunciar" |
-| 5 | Formulario a correo | ❌ pendiente |
+| 5 | Formulario a Brevo | ⚠️ falta el secreto `BREVO_API_KEY` |
 | 6 | GA4 y Píxel de Meta | ❌ pendiente, necesario antes de pautar |
 | 7 | Links de pago | ❌ Flow en creación |
 
@@ -109,20 +109,21 @@ Para cerrar una cohorte llena: cambia `"estado": "cerrado"` y desaparece de la w
 
 ---
 
-## 5. Formulario de inscripción
+## 5. Formulario de inscripción — ⚠️ falta un paso
 
-Hoy, al enviar el formulario, se abre WhatsApp con los datos precargados. Funciona,
-pero no te deja registro ordenado de los leads.
-
-Para recibirlos por correo, crea una cuenta gratuita en **[Formspree](https://formspree.io)**
-(50 envíos al mes gratis), copia el ID del formulario y pégalo:
+El formulario ya no deriva a WhatsApp: envía a `/api/lead`, un endpoint propio
+dentro del mismo Worker que publica el sitio, que guarda el lead en Brevo, le manda
+el correo de bienvenida y te avisa a `contacto@coatzadrone.cl`.
 
 ```json
-  "formulario_endpoint": "https://formspree.io/f/xdorkpqz",
+  "formulario_endpoint": "/api/lead",
 ```
 
-Alternativa igual de buena y con más envíos gratis: **[Web3Forms](https://web3forms.com)**
-(250/mes). Usa la misma línea, cambiando la URL.
+**Falta cargar la clave de Brevo como secreto en Cloudflare.** Mientras no esté,
+el formulario muestra la alternativa de WhatsApp y no guarda nada.
+
+El procedimiento completo, con cómo etiquetar los anuncios y cómo armar la
+automatización de los correos 2 al 5, está en **[FORMULARIO.md](FORMULARIO.md)**.
 
 ---
 

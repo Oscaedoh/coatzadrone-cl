@@ -77,7 +77,8 @@ Pendiente — ver `docs/CONFIGURAR.md`:
 
 1. En el panel de Cloudflare: activar **Always Use HTTPS** y crear la regla de
    redirección `www` → raíz (hoy ambos sirven contenido, duplicado para SEO)
-2. Endpoint del formulario (hoy deriva a WhatsApp, sin registro ordenado)
+2. Cargar el secreto `BREVO_API_KEY` en Cloudflare para activar `/api/lead`
+   (ver `docs/FORMULARIO.md`), y armar la automatizacion de los correos 2 al 5
 3. IDs de GA4 y Píxel de Meta, antes de pautar
 4. Links de pago: cuenta de Flow en creación; Mercado Pago sin iniciar
 

@@ -515,9 +515,53 @@
 
   /* ---------- Formulario ---------- */
 
+  /**
+   * De donde viene la visita. Se lee de los parametros UTM que agregan los
+   * anuncios y se guarda en sessionStorage, porque la persona normalmente
+   * navega un rato por la pagina antes de llegar al formulario y para entonces
+   * la URL ya perdio los parametros.
+   */
+  function origenDeVisita() {
+    var guardado = null;
+    try { guardado = JSON.parse(sessionStorage.getItem('cd_origen') || 'null'); } catch (e) { /* modo privado */ }
+
+    var p = new URLSearchParams(window.location.search);
+    var fuente = p.get('utm_source') || '';
+    var campana = p.get('utm_campaign') || '';
+
+    // Sin UTM, los identificadores de clic delatan igual de donde viene.
+    if (!fuente && p.get('gclid')) fuente = 'google';
+    if (!fuente && p.get('fbclid')) fuente = 'meta';
+
+    if (!fuente) {
+      if (guardado) return guardado;
+      var ref = document.referrer;
+      if (ref) {
+        try {
+          var host = new URL(ref).hostname.replace(/^www\./, '');
+          fuente = host === window.location.hostname ? 'directo' : host;
+        } catch (e) { fuente = 'directo'; }
+      } else {
+        fuente = 'directo';
+      }
+    }
+
+    var medio = p.get('utm_medium') || '';
+    var origen = {
+      origen: medio ? fuente + ' / ' + medio : fuente,
+      campana: campana
+    };
+    try { sessionStorage.setItem('cd_origen', JSON.stringify(origen)); } catch (e) { /* modo privado */ }
+    return origen;
+  }
+
   function configurarFormulario() {
     var form = $('#formInscripcion');
     if (!form) return;
+
+    // Se captura apenas carga la pagina, no al enviar: asi el origen sobrevive
+    // aunque la persona recargue mas tarde sin los parametros de la campana.
+    origenDeVisita();
     var estado = $('#formEstado');
     var btn = $('#btnEnviar');
     var cfg = DATOS.config || {};
@@ -541,6 +585,9 @@
       var curso = cursoPorId(datos.curso);
       datos.curso_nombre = curso ? curso.titulo : datos.curso;
       datos._subject = 'Nueva inscripción — ' + datos.curso_nombre;
+      var proc = origenDeVisita();
+      datos.origen = proc.origen;
+      datos.campana = proc.campana;
 
       evento('enviar_inscripcion', { curso: datos.curso, pais: datos.pais });
 
