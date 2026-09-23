@@ -17,7 +17,7 @@ contacto, los ids de analítica (`config`) y las preguntas frecuentes (`faq`).
 | 5 | Formulario a Brevo | ✅ operativo |
 | 6 | GA4 y Píxel de Meta | ❌ pendiente, necesario antes de pautar |
 | 7 | Links de pago | ✅ Pix4Dfields en Flow; falta uno por curso que se abra |
-| 8 | Verificación anti-robots (Turnstile) | ⚪ opcional, ver [FORMULARIO.md](FORMULARIO.md#activar-turnstile) |
+| 8 | Verificación anti-robots (Turnstile) | ✅ Site Key cargada; el secreto `TURNSTILE_SECRET` va en Cloudflare |
 
 ---
 

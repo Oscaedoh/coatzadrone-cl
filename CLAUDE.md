@@ -205,7 +205,8 @@ Pendiente — ver `docs/CONFIGURAR.md`:
 8. IDs de GA4 y Píxel de Meta, antes de pautar
 9. ~~Fecha del primer curso~~ — ✅ Pix4Dfields: 31 oct, 7 y 14 nov de 2026
 10. Borrar en Brevo el contacto de prueba id 6 y la plantilla rota id 3
-11. Opcional: activar Turnstile (widget en Cloudflare + secreto `TURNSTILE_SECRET`)
+11. Turnstile: ✅ Site Key en `data/cursos.json` (23 sep). Confirmar que existe el
+    secreto `TURNSTILE_SECRET`; sin él, el servidor no exige la verificación
 12. En unas semanas, con los reportes de DMARC limpios, pasar `_dmarc` de
     `p=none` a `p=quarantine`
 
