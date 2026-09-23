@@ -1,33 +1,71 @@
 {
   // Configuracion del Worker que publica coatzadrone.cl.
   //
-  // run_worker_first hace que worker/index.js se ejecute ANTES de entregar los
-  // archivos estaticos. Es necesario para poder interceptar todo el sitio
-  // cuando esta en mantenimiento; el Worker decide y despues pide el archivo
-  // con env.ASSETS.fetch(). Sin esto, "/" se serviria sin pasar por el codigo.
-  //
   // El secreto BREVO_API_KEY no va aqui. Se define en el panel:
   // Workers & Pages -> coatzadrone-cl -> Settings -> Variables and Secrets.
-  // Tampoco va aqui ADMIN_CLAVE, la clave del panel /admin. Mismo sitio,
-  // mismo tipo Secret.
+  // Tampoco van aqui ADMIN_CLAVE (la clave del panel /admin) ni
+  // TURNSTILE_SECRET (la verificacion anti-robots). Mismo sitio, tipo Secret.
   "name": "coatzadrone-cl",
   "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
-    "run_worker_first": true
+
+    // Rutas que pasan por worker/index.js antes de servirse. Todo lo demas
+    // (CSS, JS, imagenes, fuentes, data/cursos.json) lo entrega Cloudflare
+    // directo: mas rapido, y gratis sin limite. Cada ruta de esta lista cuenta
+    // para las 100.000 solicitudes diarias del plan gratis; con "true" contaba
+    // cada imagen de cada visita.
+    //
+    // El aviso de mantenimiento cubre las paginas (portada y cursos). Los
+    // archivos estaticos quedan accesibles, pero ya son publicos en GitHub.
+    //
+    // Una ruta nueva en el Worker hay que agregarla aqui, o no se ejecuta.
+    "run_worker_first": [
+      "/",
+      "/index.html",
+      "/cursos",
+      "/cursos/",
+      "/cursos/*",
+      "/api/*",
+      "/admin",
+      "/admin/",
+      "/admin/*",
+      "/media/*",
+      "/sitemap.xml"
+    ]
   },
 
-  // Almacen de lo comercial: los precios, fechas y links de pago que se editan
-  // en /admin. El contenido de los cursos sigue en data/cursos.json; esto solo
-  // guarda lo que cambia seguido. Ver docs/PANEL.md.
+  // Almacen del catalogo: cursos, instructores e imagenes que se editan en
+  // /admin. Ver docs/PANEL.md.
   //
   // El id no es un secreto: solo identifica el almacen dentro de la cuenta, y
   // sin acceso a la cuenta no sirve de nada. Por eso puede vivir en este
-  // archivo, que es publico. La clave del panel (ADMIN_CLAVE) si es secreta y
-  // va en Settings -> Variables and Secrets, nunca aqui.
+  // archivo, que es publico.
   "kv_namespaces": [
     { "binding": "CONFIG", "id": "422c3bb42b924dbc97c354b861001e11" }
-  ]
+  ],
+
+  // Limites de intentos por IP, usados en worker/proteccion.js. El namespace_id
+  // es un numero cualquiera, unico dentro de la cuenta de Cloudflare.
+  "ratelimits": [
+    // Formulario y banner: 5 envios por minuto. Frena a quien lo dispara en
+    // serie para mandar correos con nuestro remitente.
+    { "name": "LIMITE_FORMULARIO", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
+    // Panel: 20 solicitudes por minuto. Frena a quien prueba claves.
+    { "name": "LIMITE_PANEL", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
+  ],
+
+  // Registro de errores en Workers Logs (Cloudflare -> coatzadrone-cl ->
+  // Observability). Solo guarda lo que el codigo registra a proposito, buscable
+  // por el campo "evento". invocation_logs en false: no se guarda cada visita
+  // con sus cabeceras, porque una de ellas lleva la clave del panel.
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  }
 }

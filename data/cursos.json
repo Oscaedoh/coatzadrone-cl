@@ -28,7 +28,8 @@
     "formulario_endpoint": "/api/lead",
     "pix4d_directorio_url": "https://training.pix4d.com/pages/locate-a-pix4d-trusted-training-center",
     "ga4_id": "",
-    "meta_pixel_id": ""
+    "meta_pixel_id": "",
+    "turnstile_sitekey": ""
   },
   "cursos": [
     {

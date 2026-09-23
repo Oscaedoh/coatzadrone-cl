@@ -6,17 +6,18 @@ Los **cursos, fechas, precios, links de pago e instructores** se editan en el pa
 Lo que sigue en `data/cursos.json` es poco y cambia rara vez: los datos de
 contacto, los ids de analítica (`config`) y las preguntas frecuentes (`faq`).
 
-## Estado al 21 de septiembre de 2026
+## Estado al 23 de septiembre de 2026
 
 | # | Dato | Estado |
 |---|---|---|
 | 1 | Teléfono de WhatsApp | ✅ +56 9 5704 2650 |
 | 2 | Correo de contacto | ✅ `contacto@coatzadrone.cl` recibe y envía |
-| 3 | Precio en CLP | ✅ $275.000 |
-| 4 | Fechas del curso | se cargan en el panel |
-| 5 | Formulario a Brevo | ⚠️ falta el secreto `BREVO_API_KEY` |
+| 3 | Precio en CLP | ✅ $275.000, en la edición del panel |
+| 4 | Fechas del curso | ✅ Pix4Dfields: 31 oct, 7 y 14 nov |
+| 5 | Formulario a Brevo | ✅ operativo |
 | 6 | GA4 y Píxel de Meta | ❌ pendiente, necesario antes de pautar |
-| 7 | Links de pago | ❌ Flow en creación |
+| 7 | Links de pago | ✅ Pix4Dfields en Flow; falta uno por curso que se abra |
+| 8 | Verificación anti-robots (Turnstile) | ⚪ opcional, ver [FORMULARIO.md](FORMULARIO.md#activar-turnstile) |
 
 ---
 

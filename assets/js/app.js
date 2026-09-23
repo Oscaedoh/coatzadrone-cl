@@ -994,6 +994,89 @@
     return origen;
   }
 
+  /* ---------- Verificación anti-robots (Cloudflare Turnstile) ---------- */
+
+  /**
+   * Solo existe si data/cursos.json trae config.turnstile_sitekey. Sin eso los
+   * formularios funcionan como siempre.
+   *
+   * El script de Cloudflare se carga recién cuando la persona toca el
+   * formulario, no con la página: así no pesa en la primera carga. En modo
+   * "interaction-only" casi nunca se ve; solo pide un clic si duda.
+   */
+  var turnstileCargado = null;
+
+  function cargarTurnstile() {
+    if (!turnstileCargado) {
+      turnstileCargado = new Promise(function (ok, mal) {
+        window.cdTurnstileListo = function () { ok(window.turnstile); };
+        var s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=cdTurnstileListo';
+        s.async = true;
+        s.onerror = function () { turnstileCargado = null; mal(new Error('turnstile')); };
+        document.head.appendChild(s);
+      });
+    }
+    return turnstileCargado;
+  }
+
+  function verificador(form) {
+    var sitekey = (DATOS.config || {}).turnstile_sitekey;
+    if (!sitekey) return null;
+
+    var caja = document.createElement('div');
+    caja.className = 'verificador';
+    var boton = form.querySelector('[type="submit"]');
+    boton.parentNode.insertBefore(caja, boton);
+
+    var id = null;
+    var token = '';
+    var iniciado = false;
+    var esperando = [];
+
+    function avisar() {
+      esperando.splice(0).forEach(function (f) { f(token); });
+    }
+
+    function iniciar() {
+      if (iniciado) return;
+      iniciado = true;
+      cargarTurnstile().then(function (ts) {
+        id = ts.render(caja, {
+          sitekey: sitekey,
+          appearance: 'interaction-only',
+          language: 'es',
+          action: form.id,
+          'response-field': false,
+          'refresh-expired': 'auto',
+          callback: function (t) { token = t; avisar(); },
+          'expired-callback': function () { token = ''; },
+          'error-callback': function () { token = ''; avisar(); }
+        });
+      }).catch(function () { iniciado = false; avisar(); });
+    }
+
+    form.addEventListener('focusin', iniciar);
+
+    return {
+      // Espera el comprobante hasta 10 s. Si no llega, se envía igual y el
+      // servidor decide: mejor un error con WhatsApp que un botón colgado.
+      token: function () {
+        iniciar();
+        if (token) return Promise.resolve(token);
+        return new Promise(function (ok) {
+          esperando.push(ok);
+          setTimeout(function () { ok(token); }, 10000);
+        });
+      },
+      // Cada comprobante sirve una sola vez.
+      reiniciar: function () {
+        token = '';
+        if (id !== null && window.turnstile) window.turnstile.reset(id);
+      }
+    };
+  }
+
   function configurarFormulario() {
     var form = $('#formInscripcion');
     if (!form) return;
@@ -1006,6 +1089,7 @@
     var cfg = DATOS.config || {};
     var endpoint = cfg.formulario_endpoint || '';
     var endpointListo = endpoint && endpoint.indexOf('TU_ID_AQUI') === -1;
+    var humano = endpointListo ? verificador(form) : null;
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -1049,11 +1133,15 @@
       btn.disabled = true;
       btn.textContent = 'Enviando…';
 
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      })
+      (humano ? humano.token() : Promise.resolve(''))
+        .then(function (t) {
+          if (t) datos.verificacion = t;
+          return fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+          });
+        })
         .then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           form.reset();
@@ -1070,6 +1158,7 @@
             'o a <a href="mailto:' + esc(cfg.email) + '" style="color:inherit;text-decoration:underline">' + esc(cfg.email) + '</a>.';
         })
         .finally(function () {
+          if (humano) humano.reiniciar();
           btn.disabled = false;
           btn.textContent = 'Quiero que me contacten';
         });
@@ -1105,6 +1194,7 @@
     var btn = $('#bannerBtn');
     var estado = $('#bannerEstado');
     var visible = false;
+    var humano = verificador(form);
 
     function yaRespondio() {
       try {
@@ -1188,18 +1278,22 @@
       btn.disabled = true;
       btn.textContent = 'Enviando…';
 
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'novedades',
-          email: input.value.trim(),
-          nombre: '',
-          origen: proc.origen,
-          campana: proc.campana,
-          _gotcha: form._gotcha ? form._gotcha.value : ''
+      (humano ? humano.token() : Promise.resolve(''))
+        .then(function (t) {
+          return fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tipo: 'novedades',
+              email: input.value.trim(),
+              nombre: '',
+              origen: proc.origen,
+              campana: proc.campana,
+              verificacion: t || '',
+              _gotcha: form._gotcha ? form._gotcha.value : ''
+            })
+          });
         })
-      })
         .then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           estado.className = 'banner__estado ok';
@@ -1212,6 +1306,7 @@
           estado.textContent = 'No pudimos registrarte. Intenta de nuevo o escríbenos por WhatsApp.';
         })
         .finally(function () {
+          if (humano) humano.reiniciar();
           btn.disabled = false;
           btn.textContent = 'Avísenme';
         });

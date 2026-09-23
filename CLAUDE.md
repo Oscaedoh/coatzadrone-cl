@@ -71,7 +71,9 @@ gráfica de la marca, WhatsApp, correo y el enlace al directorio de Pix4D.
 - Las URLs `*.workers.dev` quedaron desactivadas en el panel: llevaban el nombre
   de la cuenta en la dirección.
 - Siguen funcionando pese al mantenimiento: `/api/lead`, `/api/cursos`,
-  `/media/*`, `/admin` y `/api/admin/*`.
+  `/media/*`, `/admin` y `/api/admin/*`. Los archivos estáticos (`/assets/*`,
+  `/data/cursos.json`, `/robots.txt`) también responden: no pasan por el Worker
+  y ya son públicos en GitHub. El aviso cubre las páginas.
 
 **Para volver a publicarlo**, cualquiera de los dos:
 
@@ -162,10 +164,34 @@ WhatsApp no ejecutan JS) e incrusta el catálogo en `<script id="catalogo-datos"
 
 Ver `docs/PANEL.md`.
 
+## El Worker y su protección — 23 de septiembre de 2026
+
+- **`run_worker_first` es una lista de rutas** en `wrangler.jsonc`, no `true`.
+  Solo pasan por el Worker las páginas, `/api/*`, `/admin*`, `/media/*` y
+  `/sitemap.xml`; los estáticos los entrega Cloudflare gratis y sin contar para
+  las 100.000 solicitudes diarias. **Una ruta nueva del Worker hay que agregarla
+  a esa lista**, o nunca se ejecuta.
+- `worker/proteccion.js`: límite de intentos por IP (binding `ratelimits`:
+  formulario 5/min, panel 20/min), chequeo de `Origin` en `/api/lead`, Turnstile
+  opcional, cabeceras de seguridad con HSTS de 30 días en toda respuesta del
+  Worker (las mismas que `_headers` pone a los estáticos: cambiar las dos) y
+  `registrar()`.
+- **Registro:** Workers Logs (*Observability*) con `invocation_logs: false`,
+  porque las cabeceras de cada visita al panel llevan la clave. Solo se guarda lo
+  que el código registra, con un campo `evento`. Nunca correos, nombres ni claves.
+- Turnstile queda activo solo con las dos piezas: `config.turnstile_sitekey` en
+  `data/cursos.json` (pública) y el secreto `TURNSTILE_SECRET`. Ver
+  `docs/FORMULARIO.md`.
+- Los correos de un lead salen con `ctx.waitUntil`: el formulario confirma apenas
+  Brevo guarda el contacto.
+- El MCP de Cloudflare ve Workers y KV, no la configuración del dominio (SSL,
+  WAF, DNS, secretos). Eso se revisa desde afuera con curl y nslookup.
+
 Pendiente — ver `docs/CONFIGURAR.md`:
 
-1. En el panel de Cloudflare: activar **Always Use HTTPS** (la redirección
-   `www` → raíz ya quedó creada y funcionando)
+1. ~~Always Use HTTPS~~ — ✅ `http://` ya redirige a `https://`. Tras el
+   lanzamiento, subir HSTS a un año (`31536000`) en `worker/proteccion.js` y
+   `_headers`
 2. ~~Cargar el secreto `BREVO_API_KEY`~~ — ✅ hecho, `/api/lead` operativo
 3. ~~Lista de novedades del banner~~ — ✅ hecha, es la id 7
 4. ~~Secreto `ADMIN_CLAVE`~~ — ✅ creado, el panel pide clave
@@ -174,8 +200,11 @@ Pendiente — ver `docs/CONFIGURAR.md`:
 7. Links de pago de Flow: ✅ Pix4Dfields tiene el suyo. Falta uno por cada curso
    que se abra a la venta. Mercado Pago en pausa por decisión del dueño
 8. IDs de GA4 y Píxel de Meta, antes de pautar
-9. Fecha del primer curso, antes de abrir el cobro
+9. ~~Fecha del primer curso~~ — ✅ Pix4Dfields: 31 oct, 7 y 14 nov de 2026
 10. Borrar en Brevo el contacto de prueba id 6 y la plantilla rota id 3
+11. Opcional: activar Turnstile (widget en Cloudflare + secreto `TURNSTILE_SECRET`)
+12. En unas semanas, con los reportes de DMARC limpios, pasar `_dmarc` de
+    `p=none` a `p=quarantine`
 
 ## Siguientes etapas previstas
 

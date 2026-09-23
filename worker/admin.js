@@ -89,8 +89,8 @@ export async function api(request, env, ruta) {
   }
 
   if (ruta === 'datos' && request.method === 'GET') {
-    var cat = await leerCatalogo(env);
     var base = await leerBase(env);
+    var cat = await leerCatalogo(env, base);
     return json({
       ok: true,
       kv: hayKV(env),

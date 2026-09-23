@@ -1104,7 +1104,9 @@
             caja.classList.remove('cargando');
             alert(err.message === 'formato'
               ? 'Ese archivo no se pudo abrir como imagen. Prueba con un JPG o PNG.'
-              : 'No se pudo subir la imagen (' + err.message + ').');
+              : err.message === 'demasiados_intentos'
+                ? 'Demasiadas solicitudes seguidas. Espera un minuto y vuelve a subirla.'
+                : 'No se pudo subir la imagen (' + err.message + ').');
           });
       });
 
@@ -1447,6 +1449,7 @@
       if (d.error === 'datos_invalidos') { mostrarErrores(d.errores || []); decir('No se guardó.', 'mal'); return; }
       if (d.error === 'falta_kv') { decir('No se guardó: falta conectar el almacén en Cloudflare.', 'mal'); return; }
       if (res.http === 401) { decir('La sesión expiró. Vuelve a entrar.', 'mal'); return; }
+      if (res.http === 429) { decir('Demasiadas solicitudes seguidas. Espera un minuto y vuelve a guardar: tus cambios siguen aquí.', 'mal'); return; }
       decir('No se pudo guardar (' + (d.error || res.http) + ').', 'mal');
     }).catch(function () {
       decir('No se pudo conectar con el servidor. Tus cambios siguen aquí: intenta de nuevo.', 'mal');
@@ -1492,7 +1495,9 @@
       caja.hidden = false;
       caja.textContent = err && err.error === 'sin_clave_configurada'
         ? 'El panel todavía no tiene clave configurada en Cloudflare. Mientras no exista, nadie puede entrar.'
-        : (err && err.error === 'clave_incorrecta' ? 'Clave incorrecta.' : 'No se pudo conectar con el servidor.');
+        : err && err.error === 'clave_incorrecta' ? 'Clave incorrecta.'
+        : err && err.error === 'demasiados_intentos' ? 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.'
+        : 'No se pudo conectar con el servidor.';
     });
   });
 

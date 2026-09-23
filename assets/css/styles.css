@@ -710,6 +710,11 @@ p:last-child { margin-bottom: 0; }
   line-height: 1.5;
 }
 .acepto input { width: 18px; height: 18px; flex: none; margin-top: 3px; accent-color: var(--rojo); }
+/* Verificación anti-robots: invisible salvo que Cloudflare pida un clic. */
+.verificador:empty { display: none; }
+.form-inscripcion .verificador { margin-bottom: 12px; }
+.banner__form .verificador { flex: 1 1 100%; order: 3; }
+
 .form-estado { font-size: .92rem; padding: 14px 16px; border-radius: var(--radio); display: none; }
 .form-estado.ok { display: block; background: rgba(74,222,128,.12); border: 1px solid #4ADE80; color: #4ADE80; }
 .form-estado.error { display: block; background: rgba(221,51,48,.12); border: 1px solid var(--rojo); color: var(--rojo-claro); }

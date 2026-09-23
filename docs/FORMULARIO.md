@@ -10,9 +10,9 @@ Formulario  →  POST /api/lead  →  Worker  →  Brevo
                                      └─ te avisa a contacto@coatzadrone.cl
 ```
 
-El Worker vive en `worker/index.js`. No sirve el sitio: los archivos estáticos se
-entregan antes de que el código se ejecute, así que solo corre para rutas que no
-existen como archivo. Hoy la única es `/api/lead`.
+El Worker vive en `worker/index.js`. Solo corre para las rutas que lista
+`run_worker_first` en `wrangler.jsonc` (páginas, API, panel, imágenes subidas); los
+CSS, JS e imágenes del sitio los entrega Cloudflare directo.
 
 Durante el mantenimiento `/api/lead` sigue vivo: se atiende antes del chequeo,
 para poder probar los formularios con el sitio caído.
@@ -145,14 +145,55 @@ Después de guardar el secreto y desplegar:
 Si el formulario muestra el mensaje de error con la alternativa de WhatsApp, el
 Worker no pudo escribir en Brevo. Las causas, en orden de probabilidad:
 
-| Causa | Cómo se ve |
-|---|---|
-| Falta el secreto `BREVO_API_KEY` | responde `503` |
-| La clave es la SMTP y no la de API | responde `502` |
-| Se reactivó el bloqueo de IPs en Brevo | responde `502` |
-| Se renumeró la lista de leads en Brevo | responde `502` |
+| Causa | Cómo se ve | En el registro |
+|---|---|---|
+| Falta el secreto `BREVO_API_KEY` | responde `503` | `lead_sin_brevo` |
+| La clave es la SMTP y no la de API | responde `502` | `lead_brevo_rechazo` |
+| Se reactivó el bloqueo de IPs en Brevo | responde `502` | `lead_brevo_rechazo` |
+| Se renumeró la lista de leads en Brevo | responde `502` | `lead_brevo_rechazo` |
+| Más de 5 envíos en un minuto desde la misma IP | responde `429` | `lead_limite` |
+| La verificación anti-robots no pasó | responde `403` | `turnstile_rechazo` |
+| El contacto se guardó pero un correo no salió | responde `200` | `correo_fallo` |
 
-Los logs en vivo están en Cloudflare → `coatzadrone-cl` → **Logs**.
+**Dónde ver el registro:** Cloudflare → *Workers & Pages* → `coatzadrone-cl` →
+**Observability** → *Logs*. Cada línea trae un campo `evento` con los nombres de la
+tabla y el detalle técnico. Nunca guarda el correo, el nombre ni el teléfono de la
+persona. Se conserva 7 días.
+
+---
+
+## Protección contra abuso
+
+Sin protección, cualquiera podría disparar el formulario miles de veces: cada envío
+hace que Brevo mande un correo desde `contacto@coatzadrone.cl` a la dirección que
+escriban. Eso agota el cupo diario de Brevo y arriesga la cuenta de envío.
+
+| Capa | Qué frena | Dónde vive |
+|---|---|---|
+| Campo trampa (`_gotcha`) | robots simples que llenan todo | `index.html` |
+| Origen | otro sitio usando nuestro formulario | `worker/proteccion.js` |
+| Límite de intentos: 5 por minuto por IP | quien dispara en serie | `wrangler.jsonc` → `ratelimits` |
+| Verificación Turnstile (opcional) | robots que imitan un navegador | ver abajo |
+
+El panel tiene su propio límite: 20 solicitudes por minuto por IP, que hace inútil
+probar claves a ciegas.
+
+### Activar Turnstile
+
+Turnstile es la verificación anti-robots de Cloudflare: gratis, sin fotos de
+semáforos, casi siempre invisible. Queda activa solo cuando existen **las dos**
+piezas; con una sola, el formulario funciona como siempre.
+
+1. Cloudflare → **Turnstile** → *Add widget*. Nombre `coatzadrone.cl`, hostname
+   `coatzadrone.cl`, modo **Managed**. Entrega dos claves.
+2. La **Site Key** es pública: pásala para ponerla en `data/cursos.json` →
+   `config.turnstile_sitekey`, o pégala tú ahí y haz push.
+3. La **Secret Key** es secreta: *Workers & Pages* → `coatzadrone-cl` → *Settings* →
+   *Variables and Secrets* → *Add* → tipo **Secret**, nombre `TURNSTILE_SECRET`.
+   Nunca en el repositorio.
+
+Después, un envío de prueba debe llegar igual que antes. Si responde `403`, revisa
+que el hostname del widget sea exactamente `coatzadrone.cl`.
 
 > El bloqueo de IPs desconocidas de Brevo (*cuenta → Seguridad → IPs autorizadas*)
 > tiene que seguir **desactivado**. El Worker sale desde la red de Cloudflare, con

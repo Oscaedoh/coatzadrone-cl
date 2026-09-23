@@ -15,10 +15,16 @@
  *     /                         la portada
  *     /cursos/<id>              la landing de un curso
  *     /sitemap.xml              generado con el catalogo del momento
- *     todo lo demas             el archivo estatico que corresponda
  *
  * Lo primero va antes del chequeo de mantenimiento a proposito: se sigue
  * captando leads y se puede seguir armando el catalogo con el sitio abajo.
+ *
+ * Los archivos estaticos (CSS, JS, imagenes, datos) no pasan por aqui: los
+ * entrega Cloudflare directo. Que rutas llegan al Worker lo decide
+ * "run_worker_first" en wrangler.jsonc; una ruta nueva hay que agregarla alli.
+ *
+ * El formulario y el panel tienen limite de intentos, y toda respuesta sale
+ * con cabeceras de seguridad. Ver worker/proteccion.js.
  *
  * Las claves (BREVO_API_KEY, ADMIN_CLAVE) van como secretos cifrados en
  * Cloudflare. Nunca en este archivo: el repositorio es publico.
@@ -29,6 +35,7 @@ import * as admin from './admin.js';
 import * as media from './media.js';
 import * as paginas from './paginas.js';
 import * as vista from './vista.js';
+import * as proteccion from './proteccion.js';
 
 var BREVO = 'https://api.brevo.com/v3';
 
@@ -76,77 +83,119 @@ var WHATSAPP = '56957042650';
 var MANTENIMIENTO = true;
 
 export default {
-  async fetch(request, env) {
-    var url = new URL(request.url);
-
-    if (url.pathname === '/api/lead') {
-      if (request.method !== 'POST') {
-        return json({ ok: false, error: 'metodo_no_permitido' }, 405);
-      }
-      return manejarLead(request, env);
+  async fetch(request, env, ctx) {
+    var respuesta;
+    try {
+      respuesta = await atender(request, env, ctx);
+    } catch (e) {
+      proteccion.registrar('error_no_controlado', {
+        ruta: new URL(request.url).pathname,
+        mensaje: String(e && e.message || e)
+      });
+      respuesta = new Response('Error interno. Intenta de nuevo en un momento.', {
+        status: 500,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
+      });
     }
-
-    if (url.pathname === '/api/cursos') {
-      try {
-        return await catalogo.entregar(env);
-      } catch (e) {
-        // Si algo falla, que el sitio siga cargando con el catalogo inicial.
-        return env.ASSETS.fetch(new URL('/data/cursos.json', url).toString());
-      }
-    }
-
-    if (url.pathname.indexOf('/media/') === 0) {
-      return media.servir(env, url.pathname.slice('/media/'.length));
-    }
-
-    var api = url.pathname.match(/^\/api\/admin\/(datos|media|vista|salir)$/);
-    if (api) return admin.api(request, env, api[1]);
-
-    if (url.pathname === '/admin' || url.pathname === '/admin/') {
-      return admin.pagina(request, env);
-    }
-    if (url.pathname.indexOf('/admin/') === 0) {
-      var r = await env.ASSETS.fetch(request);
-      var h = new Headers(r.headers);
-      h.set('X-Robots-Tag', 'noindex, nofollow');
-      h.set('Cache-Control', 'no-cache');
-      return new Response(r.body, { status: r.status, headers: h });
-    }
-
-    // Con la cookie de vista previa, el dueno ve el sitio real aunque el
-    // publico vea el aviso, y puede abrir cursos ocultos. Ver worker/vista.js.
-    var mantenimiento = enMantenimiento(env);
-    // Solo se verifica la firma cuando importa: con el sitio publicado, un CSS
-    // o una imagen no necesitan saber si quien los pide es el dueno.
-    var vistaPrevia = (mantenimiento || url.pathname.indexOf('/cursos/') === 0)
-      ? await vista.valida(request, env)
-      : false;
-    if (mantenimiento && !vistaPrevia) return paginaMantenimiento();
-    var opciones = { vistaPrevia: vistaPrevia, mantenimiento: mantenimiento };
-
-    if (url.pathname === '/' || url.pathname === '/index.html') {
-      if (url.pathname === '/index.html') {
-        return Response.redirect(new URL('/' + url.search, url).toString(), 301);
-      }
-      try {
-        return await paginas.inicio(request, env, opciones);
-      } catch (e) {
-        return env.ASSETS.fetch(request);
-      }
-    }
-
-    if (url.pathname === '/cursos' || url.pathname === '/cursos/') {
-      return Response.redirect(new URL('/#cursos', url).toString(), 301);
-    }
-
-    var ruta = url.pathname.match(/^\/cursos\/([a-z0-9-]{1,80})\/?$/);
-    if (ruta) return paginas.curso(request, env, ruta[1], opciones);
-
-    if (url.pathname === '/sitemap.xml') return paginas.sitemap(env);
-
-    return env.ASSETS.fetch(request);
+    return proteccion.conCabeceras(respuesta);
   }
 };
+
+/**
+ * Solo llegan aqui las rutas que wrangler.jsonc manda al Worker
+ * ("run_worker_first"). El resto (CSS, JS, imagenes, fuentes) lo entrega
+ * Cloudflare directo: es mas rapido y no cuenta para el limite diario de
+ * solicitudes del plan gratis.
+ */
+async function atender(request, env, ctx) {
+  var url = new URL(request.url);
+
+  if (url.pathname === '/api/lead') {
+    if (request.method !== 'POST') {
+      return json({ ok: false, error: 'metodo_no_permitido' }, 405);
+    }
+    if (!proteccion.origenPermitido(request)) {
+      proteccion.registrar('lead_origen_ajeno', { origen: request.headers.get('Origin') });
+      return json({ ok: false, error: 'origen_no_permitido' }, 403);
+    }
+    // 5 envios por minuto por IP: nadie llena el formulario mas rapido que eso.
+    if (!(await proteccion.dentroDelLimite(env.LIMITE_FORMULARIO, 'lead:' + proteccion.ipDe(request)))) {
+      proteccion.registrar('lead_limite', {});
+      return json({ ok: false, error: 'demasiados_intentos' }, 429, { 'Retry-After': '60' });
+    }
+    return manejarLead(request, env, ctx);
+  }
+
+  if (url.pathname === '/api/cursos') {
+    try {
+      return await catalogo.entregar(env);
+    } catch (e) {
+      // Si algo falla, que el sitio siga cargando con el catalogo inicial.
+      proteccion.registrar('catalogo_fallo', { mensaje: String(e && e.message || e) });
+      return env.ASSETS.fetch(new URL('/data/cursos.json', url).toString());
+    }
+  }
+
+  if (url.pathname.indexOf('/media/') === 0) {
+    return media.servir(env, url.pathname.slice('/media/'.length));
+  }
+
+  var api = url.pathname.match(/^\/api\/admin\/(datos|media|vista|salir)$/);
+  if (api) {
+    // 20 solicitudes por minuto por IP. Usar el panel no llega ni cerca;
+    // probar claves a ciegas queda en 20 por minuto, un ritmo inutil.
+    if (!(await proteccion.dentroDelLimite(env.LIMITE_PANEL, 'panel:' + proteccion.ipDe(request)))) {
+      proteccion.registrar('panel_limite', {});
+      return json({ ok: false, error: 'demasiados_intentos' }, 429, { 'Retry-After': '60' });
+    }
+    return admin.api(request, env, api[1]);
+  }
+
+  if (url.pathname === '/admin' || url.pathname === '/admin/') {
+    return admin.pagina(request, env);
+  }
+  if (url.pathname.indexOf('/admin/') === 0) {
+    var r = await env.ASSETS.fetch(request);
+    var h = new Headers(r.headers);
+    h.set('X-Robots-Tag', 'noindex, nofollow');
+    h.set('Cache-Control', 'no-cache');
+    return new Response(r.body, { status: r.status, headers: h });
+  }
+
+  // Con la cookie de vista previa, el dueno ve el sitio real aunque el
+  // publico vea el aviso, y puede abrir cursos ocultos. Ver worker/vista.js.
+  var mantenimiento = enMantenimiento(env);
+  // Solo se verifica la firma cuando importa: con el sitio publicado, la
+  // portada no necesita saber si quien la pide es el dueno.
+  var vistaPrevia = (mantenimiento || url.pathname.indexOf('/cursos/') === 0)
+    ? await vista.valida(request, env)
+    : false;
+  if (mantenimiento && !vistaPrevia) return paginaMantenimiento();
+  var opciones = { vistaPrevia: vistaPrevia, mantenimiento: mantenimiento };
+
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    if (url.pathname === '/index.html') {
+      return Response.redirect(new URL('/' + url.search, url).toString(), 301);
+    }
+    try {
+      return await paginas.inicio(request, env, opciones);
+    } catch (e) {
+      proteccion.registrar('portada_fallo', { mensaje: String(e && e.message || e) });
+      return env.ASSETS.fetch(request);
+    }
+  }
+
+  if (url.pathname === '/cursos' || url.pathname === '/cursos/') {
+    return Response.redirect(new URL('/#cursos', url).toString(), 301);
+  }
+
+  var ruta = url.pathname.match(/^\/cursos\/([a-z0-9-]{1,80})\/?$/);
+  if (ruta) return paginas.curso(request, env, ruta[1], opciones);
+
+  if (url.pathname === '/sitemap.xml') return paginas.sitemap(env);
+
+  return env.ASSETS.fetch(request);
+}
 
 function enMantenimiento(env) {
   if (env.SITIO_PUBLICO === '1') return false;
@@ -218,7 +267,7 @@ function paginaMantenimiento() {
   });
 }
 
-async function manejarLead(request, env) {
+async function manejarLead(request, env, ctx) {
   var datos;
   try {
     datos = await request.json();
@@ -245,7 +294,17 @@ async function manejarLead(request, env) {
   if (!env.BREVO_API_KEY) {
     // Sin la clave no hay nada que hacer, pero el 503 le dice al formulario que
     // muestre la alternativa de WhatsApp en vez de tragarse el lead en silencio.
+    proteccion.registrar('lead_sin_brevo', {});
     return json({ ok: false, error: 'sin_configurar' }, 503);
+  }
+
+  // Verificacion anti-robots, solo si esta configurada. Ver worker/proteccion.js.
+  var base = await catalogo.leerBase(env);
+  if (proteccion.turnstileActivo(env, base.config)) {
+    // Sin texto(): recorta a 500 caracteres y el comprobante puede ser mas largo.
+    var comprobante = typeof datos.verificacion === 'string' ? datos.verificacion : '';
+    var humano = await proteccion.verificarTurnstile(env, comprobante, proteccion.ipDe(request));
+    if (!humano) return json({ ok: false, error: 'verificacion_fallida' }, 403);
   }
 
   var telefono = normalizarTelefono(texto(datos.telefono), texto(datos.pais));
@@ -274,11 +333,16 @@ async function manejarLead(request, env) {
 
   var guardado = await guardarContacto(env, email, atributos, atributosFragiles, lista);
   if (!guardado.ok) {
-    return json({ ok: false, error: 'brevo_rechazo', detalle: guardado.detalle }, 502);
+    // El detalle de Brevo queda en el registro, no en la respuesta: a quien
+    // llena el formulario no le sirve, y a un curioso le cuenta de mas.
+    proteccion.registrar('lead_brevo_rechazo', { tipo: esNovedades ? 'novedades' : 'contacto', detalle: guardado.detalle });
+    return json({ ok: false, error: 'brevo_rechazo' }, 502);
   }
 
   // Los correos son secundarios: si fallan, el contacto ya quedo guardado y no
-  // tiene sentido decirle a la persona que algo salio mal.
+  // tiene sentido decirle a la persona que algo salio mal. Por eso se mandan
+  // despues de responder (waitUntil): el formulario confirma sin esperarlos, y
+  // si alguno falla queda en el registro.
   //
   // El del banner no recibe la bienvenida del curso ni genera aviso interno:
   // pidio que lo mantuvieran informado, no que lo contactaran. Tratarlo como
@@ -290,13 +354,24 @@ async function manejarLead(request, env) {
         avisarInterno(env, { nombre: nombre, email: email, telefono: telefono, curso: curso, datos: datos })
       ];
 
-  var correos = await Promise.allSettled(pendientes);
+  var envio = Promise.allSettled(pendientes).then(function (resultados) {
+    resultados.forEach(function (r, i) {
+      var fallo = r.status === 'rejected' ? String(r.reason) : (!r.value.ok ? r.value.detalle : '');
+      if (fallo) {
+        proteccion.registrar('correo_fallo', {
+          correo: esNovedades ? 'novedades' : (i === 0 ? 'bienvenida' : 'aviso_interno'),
+          detalle: fallo
+        });
+      }
+    });
+  });
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(envio);
+  else await envio;
 
   return json({
     ok: true,
     tipo: esNovedades ? 'novedades' : 'contacto',
-    contacto: guardado.modo,
-    correos: correos.map(function (r) { return r.status; })
+    contacto: guardado.modo
   });
 }
 
@@ -395,6 +470,8 @@ async function brevo(env, ruta, cuerpo) {
 
   var detalle = '';
   try { detalle = (await res.text()).slice(0, 300); } catch (e) { /* da igual */ }
+  // Este detalle termina en el registro: se le borra cualquier correo que traiga.
+  detalle = detalle.replace(/[^\s"'@]+@[^\s"'@]+/g, '[correo]');
   return { ok: false, detalle: res.status + ' ' + detalle };
 }
 
@@ -441,12 +518,11 @@ function escapar(v) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function json(cuerpo, estado) {
-  return new Response(JSON.stringify(cuerpo), {
-    status: estado || 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store'
-    }
-  });
+function json(cuerpo, estado, extra) {
+  var h = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store'
+  };
+  Object.assign(h, extra || {});
+  return new Response(JSON.stringify(cuerpo), { status: estado || 200, headers: h });
 }

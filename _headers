@@ -1,7 +1,11 @@
-# Cabeceras para Cloudflare Pages
-# https://developers.cloudflare.com/pages/configuration/headers/
+# Cabeceras de los archivos estaticos (Workers Static Assets)
+# https://developers.cloudflare.com/workers/static-assets/headers/
+#
+# Las respuestas que arma el Worker (portada, cursos, API, mantenimiento) reciben
+# las mismas desde worker/proteccion.js. Si se cambia una, cambiar las dos.
 
 /*
+  Strict-Transport-Security: max-age=2592000
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
