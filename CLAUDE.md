@@ -170,7 +170,10 @@ Ver `docs/PANEL.md`.
   Solo pasan por el Worker las páginas, `/api/*`, `/admin*`, `/media/*` y
   `/sitemap.xml`; los estáticos los entrega Cloudflare gratis y sin contar para
   las 100.000 solicitudes diarias. **Una ruta nueva del Worker hay que agregarla
-  a esa lista**, o nunca se ejecuta.
+  a esa lista**, o nunca se ejecuta. Workers Builds **rechaza el despliegue** si
+  una regla cubre a otra (`/admin/*` y `/admin/` juntas): pasó el 23 de
+  septiembre. El registro del build solo se ve en el panel de Cloudflare; desde
+  aquí, el resultado se lee en los check-runs del commit en la API de GitHub.
 - `worker/proteccion.js`: límite de intentos por IP (binding `ratelimits`:
   formulario 5/min, panel 20/min), chequeo de `Origin` en `/api/lead`, Turnstile
   opcional, cabeceras de seguridad con HSTS de 30 días en toda respuesta del

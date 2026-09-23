@@ -12,12 +12,29 @@
     "directory": "./",
     "binding": "ASSETS",
 
-    // Todo pasa por worker/index.js antes de servirse: lo necesita el aviso de
-    // mantenimiento. Pendiente: pasar a una lista de rutas para que CSS, JS e
-    // imagenes no cuenten en las 100.000 solicitudes diarias del plan gratis.
-    // El 23 de septiembre la lista hizo fallar el despliegue en Workers Builds;
-    // ver CLAUDE.md antes de reintentarlo.
-    "run_worker_first": true
+    // Rutas que pasan por worker/index.js antes de servirse. Todo lo demas
+    // (CSS, JS, imagenes, fuentes, data/cursos.json) lo entrega Cloudflare
+    // directo: mas rapido, y gratis sin limite. Cada ruta de esta lista cuenta
+    // para las 100.000 solicitudes diarias del plan gratis; con "true" contaba
+    // cada imagen de cada visita.
+    //
+    // El aviso de mantenimiento cubre las paginas (portada y cursos). Los
+    // archivos estaticos quedan accesibles, pero ya son publicos en GitHub.
+    //
+    // Una ruta nueva en el Worker hay que agregarla aqui, o no se ejecuta.
+    // Ojo: Cloudflare rechaza el despliegue si una regla ya cubre a otra
+    // ("/admin/*" ya incluye "/admin/"; no se puede listar las dos).
+    "run_worker_first": [
+      "/",
+      "/index.html",
+      "/cursos",
+      "/cursos/*",
+      "/api/*",
+      "/admin",
+      "/admin/*",
+      "/media/*",
+      "/sitemap.xml"
+    ]
   },
 
   // Almacen del catalogo: cursos, instructores e imagenes que se editan en
