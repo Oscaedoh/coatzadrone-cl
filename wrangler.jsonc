@@ -47,15 +47,6 @@
     { "binding": "CONFIG", "id": "422c3bb42b924dbc97c354b861001e11" }
   ],
 
-  // Limites de intentos por IP, usados en worker/proteccion.js. El namespace_id
-  // es un numero cualquiera, unico dentro de la cuenta de Cloudflare.
-  "ratelimits": [
-    // Formulario y banner: 5 envios por minuto. Frena a quien lo dispara en
-    // serie para mandar correos con nuestro remitente.
-    { "name": "LIMITE_FORMULARIO", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
-    // Panel: 20 solicitudes por minuto. Frena a quien prueba claves.
-    { "name": "LIMITE_PANEL", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
-  ],
 
   // Registro de errores en Workers Logs (Cloudflare -> coatzadrone-cl ->
   // Observability). Solo guarda lo que el codigo registra a proposito, buscable
